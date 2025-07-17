@@ -5,49 +5,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Team Ping - Mason Haines - Samuel Mouradian</title>
+    <title>Tic Tac Toe - Mason Haines - Samuel Mouradian</title>
+    <link rel = "stylesheet" href = "PUBLIC/style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Orbitron:wght@400..900&family=Protest+Revolution&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <button id = "ping"> ping </button>
+    <div id = "ConnectionScreen">
+        <h1>Connecting...</h1>
+        <p>Please wait while you are being connected to the game server.</p>
+    </div>
+
+    <div class = "gameContainer">
+        <h1 id = "titleH1" >Tic Tac Toe</h1>
+        <div class = "button-row-container"> 
+            <button type = "button" id = "startClearButton" >Start</button> 
+            <!-- <button type = "button" id = "clearButton" >Clear</button> -->
+               
+
+            <!-- <div id="diceInputContainer" style="display: none;" class = "tooltip">
+                <input type="number" id="diceInputValue" placeholder="Enter a number (1-6)" min="1" max="6">
+                <span class = "tooltiptext" >typesEnter a number and press roll dice. This will decide who goes first.<br>Whom ever guesses the number closest to the dice roll<br> will go first and will be "O". The other player will be "X"</span>
+            </div> -->
+            
+        </div>
+
+        <div id = "diceInputSection" style  =  "display: none;">
+            <h3>Who Goes First?</h3>
+            <div id = "diceInputContainer" class = "tooltip">
+                <input type = "number" id = "diceInputValue" placeholder = "Enter a number (1–6)" min = "1" max = "6">
+                <span class = "tooltiptext">
+                Enter a number and press Enter. Closest to the dice roll goes first as "O".
+            </span>
+            </div>
+        </div>
+
+
+        <!-- #gameboard>.box#$*9 -->
+        <div id="cellContainer">
+            <div cellIndex = "0" class="cell" ></div>
+            <div cellIndex = "1" class="cell" ></div>
+            <div cellIndex = "2" class="cell" ></div>
+            <div cellIndex = "3" class="cell" ></div>
+            <div cellIndex = "4" class="cell" ></div>
+            <div cellIndex = "5" class="cell" ></div>
+            <div cellIndex = "6" class="cell" ></div>
+            <div cellIndex = "7" class="cell" ></div>
+            <div cellIndex = "8" class="cell" ></div>
+        </div>
+        
+        <h3 id = "statusText">Change this class back to game state</h3>
+
+    </div>
     <script>
 
-        const a = navigator.userAgent;
-        var agent = "Firefox" // the default, ff order is important
-        if (a.indexOf("Safari") > 0) agent = "Safari";
-        if (a.indexOf("Chrome") > 0) agent = "Chrome";
-        if (a.indexOf("OPR") > 0) agent = "Opera";
-        if (a.indexOf("Edg") > 0) agent = "Edge";
 
-        let serverToken = {};
-        let localToken = {}; 
+        let serverGameState = {};
+        let localGameState = {}; 
         let DoOnce = true;
-        let bCanPing = false;
 
         // initialize the ping button for each user depending on server connection order
         (async () => {
-            
-            await getToken(); // fetch the json token from the server
-            if ((serverToken.user === null || serverToken.user === "")) {
-                document.getElementById("ping").disabled = false; // enable the ping button
-                document.getElementById("ping").style.backgroundColor = "green"; // change the button color to green
-                serverToken.user = "No Name"; // set a default user name
-                await tempToken(serverToken); 
-                bCanPing = true; 
-            } else {
-                document.getElementById("ping").disabled = true; // disable the ping button
-                document.getElementById("ping").style.backgroundColor = "red"; // change the button color to red
-                bCanPing = false; 
+            try {
+                // Show the connection screen and hide the game UI 
+                document.querySelector(".gameContainer").style.display = "none";
+                document.querySelector(".button-row-container").style.display = "none";
+                document.getElementById("ConnectionScreen").style.display = "flex";
+
+                await sleep(2000);
+
+
+                // try fetch game state from the server 
+                await getFetch_GameState();
+                await RegisterPlayer(serverGameState);
+
+                // hide the connection screen and show the game UI
+                document.getElementById("ConnectionScreen").style.display = "none";
+                document.querySelector(".gameContainer").style.display = "block";
+                document.querySelector(".button-row-container").style.display = "flex";
+
+            } catch (error) {
+
+                await sleep(2000);
+
+                console.error("Connection failed:", error);
+                document.getElementById("ConnectionScreen").innerHTML = `<h1>Connection Failed. Refresh the page</h1>`;
             }
+
+
+            // if ((serverGameState.user === null || serverGameState.user === "")) {
+            //     document.getElementById("ping").disabled = false; // enable the ping button
+            //     document.getElementById("ping").style.backgroundColor = "green"; // change the button color to green
+            //     serverGameState.user = "No Name"; // set a default user name
+            //     await tempToken(serverGameState); 
+            //     bCanPing = true; 
+            // } else {
+            //     document.getElementById("ping").disabled = true; // disable the ping button
+            //     document.getElementById("ping").style.backgroundColor = "red"; // change the button color to red
+            //     bCanPing = false; 
+            // }
         })();
+
 
         // prompt the user for their name once and set the token.user to the value
         (async function() {
+
+            // this needs to become a function that creates a name for the player. essentially whom ever comes first
+            // gets the name player one or player two etc and if there are more than two players they need to be kept off the server and given
+            // a wait UI or something that informs them they are waiting to play 
+
             if (DoOnce) {
                 var userName = prompt("Enter your name", name);
-                await setToken(userName);
+                await setLocalPlayerID(userName);
                 DoOnce = false;
-                console.log("prompt done after setting serverToken userName to : " + serverToken.user);
+                console.log("prompt done after setting serverGameState userName to : " + serverGameState.user);
             }
         })();
 
@@ -55,7 +129,7 @@
         // and change the button color accordingly
         async function togglePingButton() {
             let pingButton = document.getElementById("ping");
-            console.log("userName:" + serverToken.user + "Browser:" +serverToken.browser + ", can ping:" + bCanPing);
+            console.log("userName:" + serverGameState.user + "Browser:" +serverGameState.browser + ", can ping:" + bCanPing);
             if (pingButton.disabled && bCanPing === true) {
                 pingButton.disabled = false; // enable the button
                 pingButton.style.backgroundColor = "green"; // change the button color to green
@@ -68,10 +142,10 @@
         function pollServerOnInterval() {
             setInterval(async () => {
 
-                await getToken(); // fetch the token from the server
-                if (bCanPing === false && (serverToken.user !== "No Name" && serverToken.user !== localToken.user)) { // your button should be red too
+                await getFetch_GameState(); // fetch the token from the server
+                if (bCanPing === false && (serverGameState.user !== "No Name" && serverGameState.user !== localGameState.user)) { // your button should be red too
                     bCanPing = true; 
-                    if (serverToken.user !== localToken.user) {
+                    if (serverGameState.user !== localGameState.user) {
                         await togglePingButton(); // toggle the ping button state
                     }
                 } 
@@ -79,20 +153,20 @@
         }
 
         // creates a JS object {user: name, browser: name} on Client
-        async function setToken(name) 
+        async function setLocalPlayerID(name) 
         {
-            console.log("setToken called with name: " + name);
-            serverToken.user = name;
-            if (serverToken.user === null || serverToken.user === "") {
-                serverToken.user = "No Name";
+            console.log("setLocalPlayerID called with name: " + name);
+            serverGameState.user = name;
+            if (serverGameState.user === null || serverGameState.user === "") {
+                serverGameState.user = "No Name";
             }
-            serverToken.browser = agent;
-            localToken = serverToken; // copy the server token to the local token
+            serverGameState.browser = agent;
+            localGameState = serverGameState; // copy the server token to the local token
             pollServerOnInterval(); // starting pollingt the server for updates on ping
         }
 
-        // writes a token from Client as a JSON file on the Server
-        async function putToken(token) 
+        // writes a game state from Client as a JSON file on the Server
+        async function putFetch_GameState(token) 
         {
            
             fetch("https://vigilant-space-halibut-v47w564jg57cwjv5-8080.app.github.dev/token", { // listen on the server not the browser port
@@ -112,8 +186,8 @@
             });
         }
 
-                // writes a token from Client as a JSON file on the Server
-        async function tempToken(token) 
+                // writes a game state from Client as a JSON file on the Server
+        async function RegisterPlayer(token) 
         {
             fetch("https://vigilant-space-halibut-v47w564jg57cwjv5-8080.app.github.dev/token", { // listen on the server not the browser port
                 method : "POST", 
@@ -135,21 +209,28 @@
 
 
         // reads the JSON file on the Server, returns a JS token to the Client
-        async function getToken()
+        async function getFetch_GameState()
         {
+            
+
             const response = await fetch ("https://vigilant-space-halibut-v47w564jg57cwjv5-8080.app.github.dev/token");
             const jData = await response.json();
-            serverToken = jData; // copy the server token to the local token
+            serverGameState = jData; // copy the server token to the local token
         }
 
 
         let ping = document.getElementById("ping");
         ping.addEventListener("click", async () => {
             bCanPing = false;
-            await putToken(localToken);
+            await putFetch_GameState(localGameState);
             togglePingButton(); // toggle the ping button state
             
         })
+
+
+        function sleep(ms) {
+            return new Promise(resolve =>setTimeout(resolve, ms)); // https://youtu.be/pw_abLxr4PI?si=Tlfw1HBU92o0wX3B
+        }
 
     </script>
     

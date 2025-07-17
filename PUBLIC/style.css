@@ -6,6 +6,46 @@
   line-height: 10px;
 }
 
+#ConnectionScreen {
+
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+    align-items: center;
+
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    background: linear-gradient(to right, hsl(215, 89%, 14%), hsl(204, 2%, 55%)); 
+    border: 5px solid hsla(0, 0%, 100%, 0.562);
+    border-radius: 20px;
+    outline: 5px solid black;
+    outline-offset: 0px;
+    
+    padding: 40px;
+    z-index: 100;
+
+    font-family: "Jersey 10", sans-serif;
+    color: white;
+    text-align: center;
+
+    animation: flash 2s infinite;
+}
+
+#ConnectionScreen h1 {
+    animation: flash 2s infinite;
+}
+
+@keyframes flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+
+
+
 body {
 
     background-color: #f7d891;
@@ -13,7 +53,6 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-
 }
 
 #diceInputSection {
