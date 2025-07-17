@@ -1,0 +1,234 @@
+.jersey-10-regular {
+    
+  font-family: "Jersey 10", sans-serif;
+  font-weight: 400;
+  font-style:normal;
+  line-height: 10px;
+}
+
+body {
+
+    background-color: #f7d891;
+    margin: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+}
+
+#diceInputSection {
+  margin-bottom: 1rem;
+  padding: 20px;
+  text-align: center;
+
+  font-family: "Jersey 10", sans-serif;
+  font-size: 1.5rem;
+
+  background-color: black;
+  color: white;
+  border: 5px solid hsla(0, 0%, 100%, 0.562);
+  border-radius: 20px;
+  outline: 5px solid black;
+  outline-offset: 0px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+#diceInputContainer input[type="number"] {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 1.5rem;
+  padding: 10px;
+  width: 250px;
+
+  border-radius: 10px;
+  border: 2px solid black;
+  text-align: center;
+}
+
+
+/* selector for gameContainer class */
+.gameContainer {
+
+    background: linear-gradient(to left, hsl(215, 89%, 14%),  hsl(204, 2%, 55%)) ;
+    padding: 50px;
+    box-shadow: 10px 10px 5px hsl(0, 0%, 0%, .5);
+    min-width: 350px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+}
+
+/* selector for button-row-container class */
+.button-row-container {
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 35px;
+    padding-bottom: 35px;
+
+}
+
+#titleH1 {
+
+    font-family: "Jersey 10", sans-serif;
+    font-size: 3rem;
+    font-weight: bolder;
+    display: inline-block;
+    
+    background-color: hsl(0, 0%, 0%);
+    color: white;
+    border: 5px solid hsla(0, 0%, 100%, 0.562);
+    border-radius: 20px;
+    outline: 5px solid black;
+    outline-offset: 0px;
+    
+    padding: 20px 150px;
+    text-align: center;
+
+    white-space: nowrap;
+
+}
+
+/* selector for cell container id  */
+#cellContainer {
+
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    width: auto;
+    margin: auto;
+    padding: 50px 50px;
+
+    visibility: hidden;
+
+}
+
+#statusText {
+
+    font-family: "Jersey 10", sans-serif;
+    font-size: 2rem;
+    display:flex;
+    align-items: center;
+    background-color: hsl(0, 0%, 0%);
+    color: white;
+
+    border:5px solid hsla(0, 0%, 100%, 0.561);
+    border-radius: 20px;
+    outline: 5px solid black;
+    outline-offset: 0px;
+
+    padding: 20px;
+}
+
+/* selector for cell class */
+.cell {
+
+    width:90px;
+    height:90px;
+    border: 3px solid black;
+    box-shadow: 0 0 0 0px;
+    line-height: 75px;
+
+    font-family: "Jersey 10", sans-serif;
+    font-size: 100px;
+    color: black;
+    text-align: center;
+    cursor: pointer;
+
+}
+.cell:hover {
+    background-color: greenyellow;
+}
+
+.cell:nth-child(3n) {
+    border-right: none;
+}
+
+.cell:nth-child(n+7) {
+    border-bottom: none;
+}
+
+.cell:nth-child(3n-2) {
+    border-left: none;
+}
+
+.cell:nth-child(-n+3) {
+    border-top: none;
+} 
+
+button[type="button"] {
+
+    font-family: "Jersey 10", sans-serif;
+    padding: 10px 30px;
+    font-weight: normal;
+    font-size: 1.5rem;
+
+    background-color: hsl(0, 0%, 0%);
+    color: white;
+
+    border: 5px solid hsla(0, 0%, 100%, 0.562);
+    border-radius: 20px;
+    outline: 5px solid black;
+    outline-offset: 0px;
+    
+    cursor:pointer;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    white-space: nowrap;
+
+}
+
+button[type="button"]:hover {
+
+    background-color: hsl(204, 2%, 55%);
+
+}
+
+.tooltip {
+  position: relative;
+}
+
+.tooltiptext {
+  --scale: 0;
+  transform: scale(var(--scale));
+  /* transform-origin: top center; */
+  transition: 150ms ;
+  
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  translate: -50% 10px;
+
+  visibility: hidden;
+  background-color: hsl(110, 64%, 74%);
+  color: black;
+  padding: 0.5rem;
+  border-radius: 20px;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.tooltip:hover .tooltiptext {
+  --scale: 1;
+  visibility: visible;
+}
+
+/* possoble types
+text
+button
+checkbox
+radio
+password
+submit
+reset
+email
+number
+date
+file
+hidden */
