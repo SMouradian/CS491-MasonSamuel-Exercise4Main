@@ -21,28 +21,28 @@ app.listen(PORT, () => {
 
  // Request to server from client for some data 
  // app.get("URL",(req,res)=>{})
-app.get("/token", (request, response) => {
-    const jData = fs.readFileSync('token.json'); // Read the token.json file
-    const tokenData = JSON.parse(jData); // Parse the JSON data to js object 
+app.get("/State", (request, response) => {
+    const jData = fs.readFileSync(gameSavePath); // Read the gameState.json file
+    const stateData = JSON.parse(jData); // Parse the JSON data to js object 
 
     // console.log("GET Request Successfull!");
-    response.json(tokenData);
+    response.json(stateData);
 	
 })
 
-app.post("/token", (request, response) => {
-    fs.writeFileSync(gameSavePath, JSON.stringify(request.body, null, 2)); // Write the request body to token.json
+app.post("/State", (request, response) => {
+    fs.writeFileSync(gameSavePath, JSON.stringify(request.body, null, 2)); // Write the request body to state.json
 
-	// console.log("TOKEN POST REQUEST SUCCESSFUL" + request.body);
+	// console.log("state POST REQUEST SUCCESSFUL" + request.body);
     console.log(`PINGED from ${request.body.user};`);
 	response.send(`PINGED from ${request.body.user};`);
 })
 
-app.post("/tempToken", (request, response) => {
-    fs.writeFileSync(gameSavePath, JSON.stringify(request.body, null, 2)); // Write the request body to token.json
+app.post("/InitState", (request, response) => {
+    fs.writeFileSync(gameSavePath, JSON.stringify(request.body, null, 2)); // Write the request body to state.json
 
-	// console.log("TEMPTOKEN POST REQUEST SUCCESSFUL" + request.body);
-	// response.send(`temp loaded to token ${request.body.user};`);
+	// console.log("TEMPstate POST REQUEST SUCCESSFUL" + request.body);
+	// response.send(`temp loaded to state ${request.body.user};`);
 })
 
 app.get("/", (request, response) => {
