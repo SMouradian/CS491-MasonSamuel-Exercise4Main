@@ -11,7 +11,6 @@ app.use(express.json());
 app.use(cors()); // enable CORS for all routes
 const PORT = process.env.PORT || 8080;
 
-
 let gameState = {
     board: Array(16).fill(""),
     currentPlayer: "",
@@ -36,6 +35,10 @@ app.listen(PORT, () => {
 app.get("/", (request, response) => {
     console.log("new Browser connected.");
     response.send("Browser Connected... at " + PORT);
+    if (gameState.isPlayerOne[0] && gameState.isPlayerTwo[0]) {
+        resetGameSave(); // Reset the game state if both players are connected
+        console.log("Both players are connected.");
+    }
 });
 
  // Request to server from client for some data 
@@ -74,7 +77,7 @@ app.post("/InitState", (request, response) => {
 
 
 // Function to reset the game state to its initial values
-function resetJSON() {
+function resetGameSave() {
     // const nullState = {
     //     board: Array(16).fill(""),
     //     currentPlayer: "",
@@ -89,7 +92,7 @@ function resetJSON() {
     // fs.writeFileSync(gameSavePath, JSON.stringify(nullState, null, 2));
     // console.log('data.json has been reset.');
 
-        gameState = {
+    gameState = {
         board: Array(16).fill(""),
         currentPlayer: "",
         playerOneGuess: null,
@@ -104,6 +107,6 @@ function resetJSON() {
 }
 
 process.on('SIGINT', () => {
-    resetJSON();
+    resetGameSave();
     process.exit();
 });
