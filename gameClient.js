@@ -14,17 +14,51 @@
 * *****************************************************************************************                           
 *****************************************************************************************/
 
+
+/**
+ * @param {boolean} running - the current state of the game, whether it is running or not 
+ * @param {number[][]} winConditions - 2d array of possible win conditions with in the gam e
+ * @param {html} cells - query all cells on the tic tac toe board
+ * @param {html} universalButton - query select the button with id universalButton
+ * @param {html} statusText - query select the button with id statusText
+ * 
+ * @param {HTMLElement} playerDiceRollGuessInput - The container for dice input elements (#diceInputContainer).
+ * @param {HTMLElement} rollDiceButton - The button used to submit a dice roll guess (#RollDice).
+ */
+
+const cells = document.querySelectorAll(".cell"); // query all cells on the tic tac toe board
+const statusText = document.querySelector("#statusText");  // query select the h3 header with id statusText
+const startClearButton = document.querySelector("#universalButton"); // query select the button with id universalButton---------------------- change dom object name later 
+
+const playerDiceRollGuessInput = document.querySelector("#diceInputContainer"); // query select the input for the dice roll guess
+const rollDiceButton = document.querySelector("#RollDice"); // query select the button for rolling the dice
+
 let serverGameState = {};
 let localGameState = {}; 
 let isWriting = false;
 let DoOnce = true;
+
+/**
+ * @type {boolean} firstGame - used to determine if the game is being played for the first time
+ * @type {boolean} running - used to determine if the game is running or not
+ * @type {boolean} playerOne - used to determine if the player is player one or two
+ * @type {boolean} playerTwo - used to determine if the player is player one or tw
+ * @type {boolean} bothPlayersHaveGuessed - used to determine if both players have guessed
+ * @type {boolean} playerHasMoved - used to determine which player can move
+ */
 let running = false; // used to determine if the game is running or not
 let playerOne = false; // used to determine if the player is player one or two
 let playerTwo = false; // used to determine if the player is player one or two
 let bothPlayersHaveGuessed = false; // used to determine if both players have guessed
 let playerHasMoved = false; // used to determine which player can move 
 
-// initialize the ping button for each user depending on server connection order
+/*************************************************************************************************************************************************** */
+
+displayStartMessage();
+
+// Initialize the game and show connection screen
+// test connection to the server, then fetch the current game state that has been saved on the server. Should be null
+// assign player one or two depending on the order of connection to the server
 (async () => {
     try {
         // Show the connection screen and hide the game UI 
@@ -34,9 +68,9 @@ let playerHasMoved = false; // used to determine which player can move
 
         // try fetch game state from the server 
         await sleep(2000);
-        await testConnectionToServer(); // test the connection to the server
         await getFetch_GameState(); // fetch the game state from the server to init serverGameState
-        await assignPlayerID(); // assign player one or two, calls register player 
+        await assignPlayerID(); // assign player one or two, calls register player // DO ONCE
+        await testConnectionToServer(); // test the connection to the server
 
         // hide the connection screen and show the game UI
         document.getElementById("ConnectionScreen").remove();
@@ -60,27 +94,41 @@ let playerHasMoved = false; // used to determine which player can move
 })();
 
 /**
+ * tests connection to the server by fetching the servers root URL
+ */
+async function testConnectionToServer() 
+{
+    await fetch("http://127.0.0.1:8080")
+    .then(response => response.text())
+    .then(data => {
+        console.log("Server message:", data); 
+    })
+    .catch(error => {
+        console.error("Fetch failed:", error);  
+    });
+}
+
+/**
  * handles posting the game state to the server safely by using a client-side lock, similar to a mutex
  * 
  * This prevents race conditions where a periodic GET request.... running on an interval
  * could overlap with a POST request and fetch incomplete or stale data.
- * 
  * The function toggles isWriting to true, delays briefly to allow any active GET
  * loops to skip, performs the POST, and then unlocks by setting isWriting to false
- *
  * @param {Object} state - The game state object to be sent to the server
  * @returns {void} Resolves once the POST is completed and the lock is cleared
  */
-
 async function safeSaveGameState(state) {
-    isWriting = true;          // lock
-    await sleep(550);         // give the GET interval a chance to skip
-    await post_GameState(state);  // do your POST
-    isWriting = false;         // unlock
+    isWriting = true;                           // lock
+    await sleep(550);                           // give the GET interval a chance to skip
+    await post_GameState(state);                // do your POST
+    isWriting = false;                          // unlock
 }
 
-
-// assign Player One and Player Two depending on the order of connection to the server
+/**
+ * assign Player One and Player Two depending on the order of connection to the server
+ * @returns {void} - displays a start message to the user
+ */
 async function assignPlayerID() {
     if (DoOnce) {
         // check if the current game state has player one or player two assigned
@@ -108,46 +156,12 @@ async function assignPlayerID() {
     }
 }
 
-
-function pollServerOnInterval() {
-    setInterval(async () => {
-
-        await getFetch_GameState(); // fetch the token from the server
-        if (bCanPing === false && (serverGameState.user !== "No Name" && serverGameState.user !== localGameState.user)) { // your button should be red too
-            bCanPing = true; 
-            if (serverGameState.user !== localGameState.user) {
-                await togglePingButton(); // toggle the ping button state
-            }
-        } 
-    }, 5000); 
-}
-
-async function testConnectionToServer() 
-{
-    await fetch("http://127.0.0.1:8080")
-    .then(response => response.text())
-    .then(data => {
-        console.log("Server message:", data); 
-    })
-    .catch(error => {
-        console.error("Fetch failed:", error);  
-    });
-}
-
-// creates a JS object {user: name, browser: name} on Client
-async function setLocalPlayerID(name) 
-{
-    console.log("setLocalPlayerID called with name: " + name);
-    serverGameState.user = name;
-    if (serverGameState.user === null || serverGameState.user === "") {
-        serverGameState.user = "No Name";
-    }
-    serverGameState.browser = agent;
-    localGameState = serverGameState; // copy the server token to the local token
-    pollServerOnInterval(); // starting pollingt the server for updates on ping
-}
-
-// writes a game state from Client as a JSON file on the Server
+/**
+ * Updates the state of the game using POST request to the server.
+ * This function sends the current game state to the server, allowing it to be saved or processed.
+ * @param {Object} state - The game state object to be sent to the server.
+ * @returns {void} Resolves once the POST is completed and the lock is cleared.
+ */
 async function post_GameState(state) 
 {
     
@@ -193,9 +207,11 @@ async function RegisterPlayer(state)
     });
 }
 
-
-
-// reads the JSON file on the Server, returns a JS token to the Client
+/**
+ * Fetches the current game state from the server.
+ * This function retrieves the game state from the server and updates the local game state.
+ * can be called periodically within an inteval to update local game state
+ */
 async function getFetch_GameState()
 {
     console.log("fetching game state from server");
@@ -205,6 +221,11 @@ async function getFetch_GameState()
     serverGameState = jData; // copy the server token to the local token
 }
 
+/**
+ * creates a delay used to pause logic for a set amount of milli seconds
+ * @param {number} ms - the number of milli seconds to delay
+ * @returns {Promise} 
+ */
 function sleep(ms) {
     return new Promise(resolve =>setTimeout(resolve, ms)); // https://youtu.be/pw_abLxr4PI?si=Tlfw1HBU92o0wX3B
 }

@@ -70,14 +70,14 @@ let currentGameState = {
 
 const winConditions = [
 
-    [0,1,2], 
-    [3,4,5],
-    [6,7,8],
-    [0,3,6],
-    [1,4,7],
-    [2,5,8],
-    [0,4,8],
-    [2,4,6]
+    [0,1,2], // 3
+    [3,4,5], // 12
+    [6,7,8], // 21
+    [0,3,6], // 9
+    [1,4,7], // 12
+    [2,5,8], // 15
+    [0,4,8], // 12
+    [2,4,6]  // 12
 
 ];
 
@@ -550,7 +550,6 @@ async function ChooseStartingPlayerByRollingDice() {
 /**
  * checks if a win condition is met by compring all combinations in winConditions
  * if a win is found, highlights the winning cells and returns true to checkwinner ends the game
- * @param {boolean} isComputer 
  * @param {number[]} tempOptions
  * @returns {number|boolean} - returns a best option vaie for machine move or returns true for a win condition
  * if no win condition returnvalue is init to zero so binary false 
