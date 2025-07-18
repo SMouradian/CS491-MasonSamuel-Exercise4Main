@@ -44,11 +44,12 @@ app.post("/State", (request, response) => {
 	response.send(`PINGED from ${request.body.user};`);
 })
 
-app.post("/InitState", (request, response) => {
+// Initialize the game state player id with the request body
+app.put("/InitState", (request, response) => {
     fs.writeFileSync(gameSavePath, JSON.stringify(request.body, null, 2)); // Write the request body to state.json
 
-	// console.log("TEMPstate POST REQUEST SUCCESSFUL" + request.body);
-	// response.send(`temp loaded to state ${request.body.user};`);
+	console.log("PlayerOne: " + request.body.isPlayerOne[0] + " - PlayerTwo: " + request.body.isPlayerTwo[0]);
+	response.send(`init loaded new player`);
 })
 
 app.get("/", (request, response) => {
@@ -56,8 +57,19 @@ app.get("/", (request, response) => {
     response.send("Browser Connected... at " + PORT);
 });
 
+// Function to reset the game state to its initial values
 function resetJSON() {
-    const nullState = { user: null, browser: null, canPing: null };
+    const nullState = {
+        board: Array(16).fill(""),
+        currentPlayer: "",
+        playerOneGuess: null,
+        playerTwoGuess: null,
+        coinFlip: null,
+        isPlayerOne: [false, ""],
+        isPlayerTwo: [false, ""],
+        winCondition: null,
+        winner: null
+    };
     fs.writeFileSync(gameSavePath, JSON.stringify(nullState, null, 2));
     console.log('data.json has been reset.');
 }

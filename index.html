@@ -66,6 +66,11 @@
         let serverGameState = {};
         let localGameState = {}; 
         let DoOnce = true;
+        let running = false; // used to determine if the game is running or not
+        let playerOne = false; // used to determine if the player is player one or two
+        let playerTwo = false; // used to determine if the player is player one or two
+        let bothPlayersHaveGuessed = false; // used to determine if both players have guessed
+        let playerHasMoved = false; // used to determine which player can move 
 
         // initialize the ping button for each user depending on server connection order
         (async () => {
@@ -75,19 +80,14 @@
                 document.querySelector(".button-row-container").style.display = "none";
                 document.getElementById("ConnectionScreen").style.display = "flex";
 
-                await sleep(2000);
-
-
                 // try fetch game state from the server 
+                await sleep(2000);
                 await testConnectionToServer(); // test the connection to the server
-                await getFetch_GameState();
-                /////// ----------------------------------------------------->>>>>> second IIF needs to be called as well as modified toggle ping set up for assinging player
-                // After tha then set a local player ID like ServerGameState.isPlayerOne[0] = true; or something like that
-                // THEN we can register the player with the server
-                // await RegisterPlayer(serverGameState); 
+                await sleep(2000);
+                await getFetch_GameState(); // fetch the game state from the server to init serverGameState
+                await assignPlayerID(); // assign player one or two, calls register player 
 
                 // hide the connection screen and show the game UI
-                // document.getElementById("ConnectionScreen").style.display = "none";
                 document.getElementById("ConnectionScreen").remove();
                 document.querySelector(".gameContainer").style.display = "flex";
                 document.querySelector(".button-row-container").style.display = "flex";
@@ -100,35 +100,34 @@
                 document.getElementById("ConnectionScreen").innerHTML = `<h1>Connection Failed. Refresh the page</h1>`;
             }
 
-
-            // if ((serverGameState.user === null || serverGameState.user === "")) {
-            //     document.getElementById("ping").disabled = false; // enable the ping button
-            //     document.getElementById("ping").style.backgroundColor = "green"; // change the button color to green
-            //     serverGameState.user = "No Name"; // set a default user name
-            //     await tempToken(serverGameState); 
-            //     bCanPing = true; 
-            // } else {
-            //     document.getElementById("ping").disabled = true; // disable the ping button
-            //     document.getElementById("ping").style.backgroundColor = "red"; // change the button color to red
-            //     bCanPing = false; 
-            // }
         })();
 
 
-        // prompt the user for their name once and set the token.user to the value
-        // (async function() {
+        // assign Player One and Player Two depending on the order of connection to the server
+        async function assignPlayerID() {
+            if (DoOnce) {
+                // check if the current game state has player one or player two assigned
+                if (!serverGameState.isPlayerOne[0]) {
+                    serverGameState.isPlayerOne[0] = true;
+                    playerOne = true; 
+                    await RegisterPlayer(serverGameState); // post the game state to the server
+                    console.log("playerOne set to " + serverGameState.isPlayerOne[0]);
 
-        //     // this needs to become a function that creates a name for the player. essentially whom ever comes first
-        //     // gets the name player one or player two etc and if there are more than two players they need to be kept off the server and given
-        //     // a wait UI or something that informs them they are waiting to play 
+                } else if (!serverGameState.isPlayerTwo[0]) {
+                    serverGameState.isPlayerTwo[0] = true;
+                    playerTwo = true; 
+                    await RegisterPlayer(serverGameState); // post the game state to the server
+                    console.log("playerTwo set to " + serverGameState.isPlayerTwo[0]);
 
-        //     if (DoOnce) {
-        //         var userName = prompt("Enter your name", name);
-        //         await setLocalPlayerID(userName);
-        //         DoOnce = false;
-        //         console.log("prompt done after setting serverGameState userName to : " + serverGameState.user);
-        //     }
-        // })();
+                } else {
+                    alert("Both players are already assigned. Please refresh the page to start a new game.");
+                    // window.location.reload(); // close the window if both players are already assigned
+                    return;
+                }
+
+                DoOnce = false;
+            }
+        }
 
         // toggle the ping button between enabled and disabled states
         // and change the button color accordingly
@@ -209,7 +208,7 @@
         async function RegisterPlayer(state) 
         {
             fetch("http://127.0.0.1:8080/InitState", { // listen on the server not the browser port
-                method : "POST", // this really should be a PUT but we are using POST for now--------------------------------------------------------------------------------LOOK HERE I NEED TO BE THOUGHT ABOUT
+                method : "PUT", 
                 headers:{
                     'content-type': 'application/json',
                     'Accept': 'application/json'
@@ -238,13 +237,13 @@
         }
 
 
-        let ping = document.getElementById("ping");
-        ping.addEventListener("click", async () => {
-            bCanPing = false;
-            await post_GameState(localGameState);
-            togglePingButton(); // toggle the ping button state
+        // let ping = document.getElementById("ping");
+        // ping.addEventListener("click", async () => {
+        //     bCanPing = false;
+        //     await post_GameState(localGameState);
+        //     togglePingButton(); // toggle the ping button state
             
-        })
+        // })
 
 
         function sleep(ms) {

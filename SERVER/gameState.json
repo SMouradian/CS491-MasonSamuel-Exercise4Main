@@ -1,5 +1,34 @@
 {
-  "user": null,
-  "browser": null,
-  "canPing": null
+  "board": [
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "currentPlayer": "",
+  "playerOneGuess": null,
+  "playerTwoGuess": null,
+  "coinFlip": null,
+  "isPlayerOne": [
+    false,
+    ""
+  ],
+  "isPlayerTwo": [
+    false,
+    ""
+  ],
+  "winCondition": null,
+  "winner": null
 }

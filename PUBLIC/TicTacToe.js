@@ -41,11 +41,11 @@ const rollDiceButton = document.querySelector("#RollDice"); // query select the 
  */
 
 let emptyGameState = {
-    board: ["", "", "", "", "", "", "", "", "" ],
+    board: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
     currentPlayer: "",
     playerOneGuess: null, // Player 1's guess (1–6)
     playerTwoGuess: null, // Player 2's guess (1–6)
-    diceRoll: null,        // Final die roll (1–6)
+    coinFlip: null,        // Final coin flip (Heads/Tails)
     isPlayerOne: [false, ""], // used to determine if the player is player one or two
     isPlayerTwo: [false, ""], // used to determine if the player is player one or two
     winCondition: null, // used to determine if the player has won the game
@@ -57,11 +57,11 @@ let emptyGameState = {
  */
 
 let currentGameState = {
-    board: ["", "", "", "", "", "", "", "", "" ],
+    board: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
     currentPlayer: "", 
     playerOneGuess: null,   // Player 1's guess (1–6)
     playerTwoGuess: null,   // Player 2's guess (1–6)
-    diceRoll: null,         // Final die roll (1–6)
+    coinFlip: null,         // Final coin flip (Heads/Tails)
     isPlayerOne: [false, ""],  // used to determine if the player is player one or two
     isPlayerTwo: [false, ""],  // used to determine if the player is player one or two
     winCondition: null, // used to determine if the player has won the game
