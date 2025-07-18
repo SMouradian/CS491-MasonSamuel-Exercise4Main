@@ -65,6 +65,7 @@
 
         let serverGameState = {};
         let localGameState = {}; 
+        let isWriting = false;
         let DoOnce = true;
         let running = false; // used to determine if the game is running or not
         let playerOne = false; // used to determine if the player is player one or two
@@ -99,7 +100,33 @@
                 document.getElementById("ConnectionScreen").innerHTML = `<h1>Connection Failed. Refresh the page</h1>`;
             }
 
+            // Interval loop to fetch game state
+            setInterval(async () => {
+                if (isWriting) return; // skip if we’re currently writing
+                await getFetch_GameState();
+            }, 500); // poll every second
+
         })();
+
+        /**
+         * handles posting the game state to the server safely by using a client-side lock, similar to a mutex
+         * 
+         * This prevents race conditions where a periodic GET request.... running on an interval
+         * could overlap with a POST request and fetch incomplete or stale data.
+         * 
+         * The function toggles isWriting to true, delays briefly to allow any active GET
+         * loops to skip, performs the POST, and then unlocks by setting isWriting to false
+         *
+         * @param {Object} state - The game state object to be sent to the server
+         * @returns {void} Resolves once the POST is completed and the lock is cleared
+         */
+
+        async function safeSaveGameState(state) {
+            isWriting = true;          // lock
+            await sleep(550);         // give the GET interval a chance to skip
+            await post_GameState(state);  // do your POST
+            isWriting = false;         // unlock
+        }
 
 
         // assign Player One and Player Two depending on the order of connection to the server
@@ -130,19 +157,6 @@
             }
         }
 
-        // toggle the ping button between enabled and disabled states
-        // and change the button color accordingly
-        async function togglePingButton() {
-            let pingButton = document.getElementById("ping");
-            console.log("userName:" + serverGameState.user + "Browser:" +serverGameState.browser + ", can ping:" + bCanPing);
-            if (pingButton.disabled && bCanPing === true) {
-                pingButton.disabled = false; // enable the button
-                pingButton.style.backgroundColor = "green"; // change the button color to green
-            } else {
-                pingButton.disabled = true; // disable the button
-                pingButton.style.backgroundColor = "red"; // change the button color to red
-            }
-        }
         
         function pollServerOnInterval() {
             setInterval(async () => {
