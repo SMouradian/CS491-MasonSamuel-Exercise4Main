@@ -79,6 +79,7 @@
 
 
                 // try fetch game state from the server 
+                await testConnectionToServer(); // test the connection to the server
                 await getFetch_GameState();
                 /////// ----------------------------------------------------->>>>>> second IIF needs to be called as well as modified toggle ping set up for assinging player
                 // After tha then set a local player ID like ServerGameState.isPlayerOne[0] = true; or something like that
@@ -156,6 +157,18 @@
             }, 5000); 
         }
 
+        async function testConnectionToServer() 
+        {
+            await fetch("http://127.0.0.1:8080")
+            .then(response => response.text())
+            .then(data => {
+                console.log("Server message:", data); 
+            })
+            .catch(error => {
+                console.error("Fetch failed:", error);  
+            });
+        }
+
         // creates a JS object {user: name, browser: name} on Client
         async function setLocalPlayerID(name) 
         {
@@ -195,12 +208,6 @@
                 // this now needs to be used after the player one and two is set. this needs to init the server with information about the player as they are connected to the server!
         async function RegisterPlayer(state) 
         {
-
-
-
-
-
-
             fetch("http://127.0.0.1:8080/InitState", { // listen on the server not the browser port
                 method : "POST", // this really should be a PUT but we are using POST for now--------------------------------------------------------------------------------LOOK HERE I NEED TO BE THOUGHT ABOUT
                 headers:{
@@ -209,14 +216,6 @@
                 },
                 body: JSON.stringify(state, null, 2) // extra params to format the JSON data
             })
-
-
-
-
-
-
-
-            
             .then(response => response.text())
             .then(data => {
                 console.log("Server message:", data); 

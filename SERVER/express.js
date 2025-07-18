@@ -16,8 +16,14 @@ app.use(express.static(path.join(__dirname, 'public'))); // Serve static files f
 
 
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server is running on ${PORT}`);
 })
+
+// Verifiy that the server is running by sending a GET request to the root URL
+app.get("/", (request, response) => {
+    console.log("new Browser connected.");
+    response.send("Browser Connected... at " + PORT);
+});
 
  // Request to server from client for some data 
  // app.get("URL",(req,res)=>{})
