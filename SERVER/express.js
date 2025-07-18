@@ -14,8 +14,8 @@ const PORT = process.env.PORT || 8080;
 let gameState = {
     board: Array(16).fill(""),
     currentPlayer: "",
-    playerOneGuess: null,
-    playerTwoGuess: null,
+    playerOneFlip: null,
+    playerTwoFlip: null,
     coinFlip: null,
     isPlayerOne: [false, ""],
     isPlayerTwo: [false, ""],
@@ -32,12 +32,14 @@ app.listen(PORT, () => {
 })
 
 // Verifiy that the server is running by sending a GET request to the root URL
+// If no player ID has been set, reset the game state and set coinFlip value
 app.get("/", (request, response) => {
     console.log("new Browser connected.");
     response.send("Browser Connected... at " + PORT);
-    if (gameState.isPlayerOne[0] && gameState.isPlayerTwo[0]) {
+    if (!gameState.isPlayerOne[0] && !gameState.isPlayerTwo[0]) {
         resetGameSave(); // Reset the game state if both players are connected
-        console.log("Both players are connected.");
+        coinFlip(); // coinFlip for computer compared value
+        console.log("Current Computer coinFlip: " + gameState.coinFlip);
     }
 });
 
@@ -53,6 +55,7 @@ app.get("/State", (request, response) => {
     response.json(gameState); // Send the game state as a JSON response
 	
 })
+
 
 app.post("/State", (request, response) => {
     // fs.writeFileSync(gameSavePath, JSON.stringify(request.body, null, 2)); // Write the request body to state.json
@@ -95,14 +98,15 @@ function resetGameSave() {
     gameState = {
         board: Array(16).fill(""),
         currentPlayer: "",
-        playerOneGuess: null,
-        playerTwoGuess: null,
+        playerOneFlip: null,
+        playerTwoFlip: null,
         coinFlip: null,
         isPlayerOne: [false, ""],
         isPlayerTwo: [false, ""],
         winCondition: null,
         winner: null
     };
+
     console.log("Game state has been reset from null state.");
 }
 
@@ -110,3 +114,10 @@ process.on('SIGINT', () => {
     resetGameSave();
     process.exit();
 });
+
+function coinFlip() {
+    const randomValue = Math.random(); // Generate a random value between 0 and 1
+    if (randomValue <.5) {gameState.coinFlip = "Heads";} // Assign "Heads" if the random value is less than 0.5
+    else {gameState.coinFlip = "Tails";} // 
+}
+
