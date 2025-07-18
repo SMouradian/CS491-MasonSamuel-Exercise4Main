@@ -137,13 +137,13 @@ body {
 #cellContainer {
 
     display: grid;
-    grid-template-columns: repeat(3, auto);
+    grid-template-columns: repeat(4, auto);
+    grid-template-rows: repeat(4, auto);
     width: auto;
     margin: auto;
     padding: 50px 50px;
 
     visibility: hidden;
-
 }
 
 #statusText {
@@ -177,27 +177,11 @@ body {
     color: black;
     text-align: center;
     cursor: pointer;
-
 }
+
 .cell:hover {
-    background-color: greenyellow;
+    background-color: rgb(51, 51, 44);
 }
-
-.cell:nth-child(3n) {
-    border-right: none;
-}
-
-.cell:nth-child(n+7) {
-    border-bottom: none;
-}
-
-.cell:nth-child(3n-2) {
-    border-left: none;
-}
-
-.cell:nth-child(-n+3) {
-    border-top: none;
-} 
 
 button[type="button"] {
 

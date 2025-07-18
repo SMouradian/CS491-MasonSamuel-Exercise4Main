@@ -746,11 +746,6 @@ function initGameStateAfterPlaying() {
 }
 
 
-/**
- * creates a delay used to pause logic for a set amount of milli seconds
- * @param {number} ms - the number of milli seconds to delay
- * @returns {Promise} 
- */
 
 function sleep(ms) {
     return new Promise(resolve =>setTimeout(resolve, ms)); // https://youtu.be/pw_abLxr4PI?si=Tlfw1HBU92o0wX3B
