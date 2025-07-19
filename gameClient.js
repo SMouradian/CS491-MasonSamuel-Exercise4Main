@@ -51,6 +51,8 @@ let running = false; // used to determine if the game is running or not
 let playerOne = false; // used to determine if the player is player one or two
 let playerTwo = false; // used to determine if the player is player one or two
 let playerHasMoved = false; // used to determine which player can move 
+// let coinTossOver = false;
+let syncSave, coinSync; 
 
 /*************************************************************************************************************************************************** */
 
@@ -79,7 +81,8 @@ document.addEventListener("keydown", (event) => {
         await sleep(2000);
         await initGameState_Fetch(); // test the connection to the server
         await getFetch_GameState(); // fetch the game state from the server to init currentGameState
-        await assignPlayerID(); // assign player one or two, calls register player // DO ONCE
+        // await assignPlayerID(); // assign player one or two, calls register player // DO ONCE
+        await getPlayerIdFetch();
         await initGameUI(); // initialize the game UI
         
         // hide the connection screen and show the game UI
@@ -87,20 +90,13 @@ document.addEventListener("keydown", (event) => {
         document.querySelector(".gameContainer").style.display = "flex";
         document.querySelector(".button-row-container").style.display = "flex";
 
-
-
     } catch (error) {
         await sleep(1000);
         console.error("Connection failed:", error);
         document.getElementById("ConnectionScreen").innerHTML = `<h1>Connection Failed. Refresh the page</h1>`;
     }
 
-    // Interval loop to fetch game state
-    setInterval(async () => {
-        displayPlayerInformation();
-        if (isWriting) return; // skip if we’re currently writing
-        await getFetch_GameState();
-    }, 500); // poll every second
+    
 
     if ((currentGameState.playerOneGuess !== null && currentGameState.playerTwoGuess !== null) && !running) {
         running = true;
@@ -118,6 +114,9 @@ universalButton.addEventListener("click", universalButtonToggle); // should not 
  */
 function displayPlayerInformation() {
     // display the current player information in the status text
+    // if (!currentGameState.coinTossOver) {
+    //     statusText.textContent = `Waiting for both players to flip their coins...`;
+    // } 
     if ((currentGameState.isPlayerOne[1] !== "" && playerOne) && (currentGameState.isPlayerOne[1] === currentGameState.currentPlayer)) {
         statusText.textContent = `Player One you are ${currentGameState.isPlayerOne[1]} your turn to move!`;
     } else if ((currentGameState.isPlayerTwo[1] !== "" && playerTwo) && (currentGameState.isPlayerTwo[1] === currentGameState.currentPlayer)) {
@@ -130,11 +129,9 @@ function displayPlayerInformation() {
  /**
  * displays a message in the status text indicating that both players are waiting for their guesses
  */
-
-function waitingForPlayerFlipMessage() {
+function displayAwaitCoinFlip() {
     statusText.textContent = `Waiting for both players to flip their coins...`;
 }
-
 
 /**
  * updates the status box on an interval to display the player information does this  every .25 seconds
@@ -147,18 +144,15 @@ function updateStatusBoxOnInterval() {
     }, 250);
 }
 
-
-/**
- * removes the player guessing box if both players have guessed
- */
-
-function removePlayerGuessingBox() {
-    // remove the player guessing box if both players have guessed
-    if (bothPlayersHaveGuessed) {
-        document.getElementById("diceInputSection").style.display = "none";
-    }
+async function pollSaveDuringGame() {
+    
+    // Interval loop to fetch game state
+    syncSave = setInterval(async () => {
+        displayPlayerInformation();
+        if (isWriting) return; // skip if we’re currently writing
+        await getFetch_GameState();
+    }, 500); // poll every second
 }
-
 
 /**
  * makes game playable setting running to now true
@@ -175,7 +169,7 @@ async function initGameUI() {
 
     // if a game has already been played
     if (currentGameState.isPlayerOne[1] !== "" && currentGameState.isPlayerTwo[1] !== "") {
-        initGameState_Fetch(); // fetch the game state from the server to init currentGameState
+        // initGameState_Fetch(); // fetch the game state from the server to init currentGameState
         currentGameState.winner = null; // reset the winner
 
         await safeSaveGameState(); 
@@ -211,7 +205,7 @@ async function cellClicked(event) {
     }
 
     await updateUsersChoiceCell(event.target, cellIndex); // ---------------- *HAS* ------------- LOCAL AND/OR FILE UPDATE
-    await updateFileGameStateWithFilePicker(); // update the file game state with the file picker
+    await safeSaveGameState(currentGameState); // save the game state to the server
     await checkWinner(); // this function calls change player and checks for a winner ---------------- *HAS* ------------- LOCAL AND/OR FILE UPDATE
 }
 
@@ -236,18 +230,13 @@ function updateBoardFromGameState() {
 
     if (currentGameState.winCondition !== null) {
         changeWinnerColors(currentGameState.winCondition); // change the text color of the winning cells
-        clearInterval(syncInterval); // clear the interval to stop updating the local status
-        clearInterval(fromFileInterval); 
-        clearInterval(toFileInterval); 
+        clearInterval(syncSave); 
         statusText.textContent = `${currentGameState.currentPlayer} wins! Press Clear to restart game`;
 
         running = false; // set running to false so that the game is not running anymore
     }
     else if (!currentGameState.board.includes("")) {
-
-        clearInterval(syncInterval); // clear the interval to stop updating the local status
-        clearInterval(fromFileInterval); 
-        clearInterval(toFileInterval); 
+        clearInterval(syncSave); // clear the interval to stop updating the local status
         statusText.textContent = `Draw! Press Clear to restart game`;
 
         running = false;
@@ -259,11 +248,11 @@ function updateBoardFromGameState() {
  * updates status text based on the current game state
  */
 
-function DrawMessage() {
+function displayDrawMessage() {
     statusText.textContent = `Draw! Press Clear to restart game`;
 }
 
-function winnerMessage() {
+function displayWinnerMessage() {
     statusText.textContent = `${currentGameState.currentPlayer} wins! Press Clear to restart game`;
 }
 
@@ -275,7 +264,7 @@ function winnerMessage() {
 
 function displayStartMessage() {
     if (firstGame) {
-        document.querySelector(".tooltiptext").style.visibility = "visible";
+        // document.querySelector(".tooltiptext").style.visibility = "visible";
         statusText.textContent = `Please press FlipCoin to play!`;
     }
 }
@@ -304,6 +293,10 @@ function changeWinnerColors(condition) {
     cells[condition[0]].style.color = "red";
     cells[condition[1]].style.color = "red";
     cells[condition[2]].style.color = "red";
+}
+
+function setUniversalButtonContent(content) {
+    universalButton.textContent = content;
 }
 
 
@@ -336,13 +329,7 @@ function restartStatusAndCells() {
     }
 }
 
-// function ButtonTextClear() {
-//     universalButton.textContent = "Clear";
-// }
 
-// function ButtonTextStart() {
-//     universalButton.textContent = "Start";
-// }
 
 /*****************************************************************************************
 * *****************************************************************************************
@@ -360,10 +347,12 @@ function restartStatusAndCells() {
 
 async function universalButtonToggle() {
     if (universalButton.textContent === "Flip Coin") {
-        universalButton.removeEventListener("click", universalButtonToggle);  
+        universalButton.removeEventListener("click", universalButtonToggle); 
+        
         FlipCoin(); // start the game by flipping a coin
     } 
     else if (universalButton.textContent === "Start") {
+        
         await rematchGameInitialization(); // reinitialize the game state
         ButtonTextClear();
     } 
@@ -371,63 +360,9 @@ async function universalButtonToggle() {
         await restartGame(); // clears board and stops game
         ButtonTextStart();
     }
+
+    console.log("hello from universalButtonToggle");
 }
-
-/**
- * This function initializes the game state when the game is first started.
- */
-
-async function startingGameInitialization() {
-    // this will initialize the game state to the file system
-    await createGameStateWithinFilePicker(); // this will create the game state within the file picker
-    await updateLocalGameStateWithFilePicker(); // this will update the local game state with the file picker
-    await reinitGameState(); // this will reinitialize the game state with the file picker ---- *HAS* --- LOCAL AND/OR FILE UPDATE
-    await assignPlayerIdFromFile(); // this will assign the player if they are from a file ---- *HAS* --- LOCAL AND/OR FILE UPDATE
-    await initGameUI(); // proceed only after file selected                                  ---- *HAS* --- LOCAL AND/OR FILE UPDATE
-    // alert("Game initialized. Please enter your guess!"); // alert the user that the game has been initialized
-}
-// universalButton.addEventListener("click", startingGameInitialization); // add event listener to the start button for starting the game
-
-
-/**
- * This function initializes the game state when the game is rematched.
- */
-
-async function rematchGameInitialization() {
-    // this will reinitialize the game state to the file system
-    ButtonTextClear();
-
-    await updateLocalGameStateWithFilePicker(); 
-    await initGameUI(); 
-    await prepareGameTurnLogicTick(); // reinitialize the cells with the event listener for cellClicked
-    updateStatusBoxOnInterval(); // update the status box on interval
-}
-
-
-
-/**
-* Ensures the game state is properly initialized on first load.
- * Initializes or reinitializes the game state file if needed.
- * @returns {void}
- */
-
-async function reinitGameState() {
-
-    await updateLocalGameStateWithFilePicker(); // this will update the local game state with the file picker
-
-    if (firstGame && (currentGameState.isPlayerOne[0] === false && currentGameState.isPlayerTwo[0] === false)) {
-        await initGameStateToFile(); // initialize the game state to the file system
-        await updateLocalGameStateWithFilePicker(); // update the local game state with the file picker
-        return;
-    }
-
-    if (firstGame && (currentGameState.isPlayerOne[0] && currentGameState.isPlayerTwo[0])) {
-        await initGameStateToFile(); 
-        await updateLocalGameStateWithFilePicker(); 
-        return;
-    }
-}        
-
 
 /**
  * Handles the dice roll guessing phase to determine which player goes first.
@@ -436,7 +371,8 @@ async function reinitGameState() {
 
 async function FlipCoin() {
 
-    const localCoinFlipResult = Math.random(); // Generate a random value between 0 and 1
+    clearInterval(coinSync);
+    let localCoinFlipResult = Math.random(); // Generate a random value between 0 and 1
 
     if (localCoinFlipResult <.5) {localCoinFlipResult = "Heads";} // Assign "Heads" if the random value is less than 0.5
     else {localCoinFlipResult = "Tails";} // not heads so tails
@@ -457,17 +393,23 @@ async function compareCoinFlip() {
 
     // only one of these should be true at this point if any at all. 
     if (currentGameState.playerOneFlip === null || currentGameState.playerTwoFlip === null) {
-        waitingForOtherPlayerFlipMessage(); // display that both players are waiting for their flips
         pollCoinFlipResult(); // poll the server for the coin flip results
+        displayAwaitCoinFlip();
         return;
     }
 
-    // Both players flipped — check for a tie
+    // Both players flipped — check for a tie - if tie set player one to winner and player two to loser
     if (currentGameState.playerOneFlip === currentGameState.playerTwoFlip) {
-        await sleep(500);
-        FlipCoin(); // both players have the same coin flip, so we will flip again
-        return; // DO NOT flip here, just wait
+        // await sleep(500);
+        // FlipCoin(); // both players have the same coin flip, so we will flip again
+        // return; // DO NOT flip here, just wait
+        currentGameState.playerOneFlip = currentGameState.coinFlip; // set player one flip to the coin flip
+        currentGameState.playerTwoFlip = "tied"; // set player two flip to tied which is not a valid flip
     }
+
+    currentGameState.coinTossOver = true; // set coin toss over to true so that the game can continue
+    await safeSaveGameState(currentGameState); // save the game state to the server
+    console.log("Coin toss is over. Player One Flip: " + currentGameState.playerOneFlip + " - Player Two Flip: " + currentGameState.playerTwoFlip);
 
     if (currentGameState.playerOneFlip === currentGameState.coinFlip)
     {
@@ -481,25 +423,45 @@ async function compareCoinFlip() {
         currentGameState.isPlayerOne[1] = "O"; // set player one to O
     }
 
-    
+    await safeSaveGameState(currentGameState); // save the game state to the server
+
+    setUniversalButtonContent("Start");
+    await pollSaveDuringGame(); 
     prepareGameTurnLogicTick(); // ---------------- *HAS* ------------- LOCAL AND/OR FILE UPDATE
     universalButton.addEventListener("click", universalButtonToggle); // should not be null
 
 }
 
 async function pollCoinFlipResult() {
-    setInterval(async () => { 
+    coinSync = setInterval(async () => {
         const response = await fetch ("http://127.0.0.1:8080/State") // listen on the server not the browser port
         const jData = await response.json();
         currentGameState = jData; // copy the server token to the local token
 
+        // if (currentGameState.playerOneFlip === currentGameState.playerTwoFlip && currentGameState.playerOneFlip !== null) {
+        //     CoinFlip(); // both players have the same coin flip, so we will flip again
+        //     currentGameState.playerOneFlip = null;
+        //     currentGameState.playerTwoFlip = null;
+        //     await safeSaveGameState(currentGameState); // save game state to server
+        // } else if (currentGameState.coinTossOver) {
+        //     // Both players have flipped, no need to flip again
+        //     setUniversalButtonContent("Start");
+        //     await pollSaveDuringGame(); 
+        //     clearInterval(coinSync);
+        // }
         if (currentGameState.playerOneFlip === currentGameState.playerTwoFlip && currentGameState.playerOneFlip !== null) {
-            CoinFlip(); // both players have the same coin flip, so we will flip again
-            currentGameState.playerOneFlip = null;
-            currentGameState.playerTwoFlip = null;
+            currentGameState.playerOneFlip = currentGameState.coinFlip; // set player one flip to the coin flip
+            currentGameState.playerTwoFlip = "tied"; // set player two flip to tied which is not a valid flip
             await safeSaveGameState(currentGameState); // save game state to server
+        } else if (currentGameState.coinTossOver) {
+            // Both players have flipped, no need to flip again
+            setUniversalButtonContent("Start");
+            await pollSaveDuringGame(); 
+            clearInterval(coinSync);
         }
-    }, 1000);
+    }, 500);
+
+    console.log("Polling for coin flip results...");
 }
 
 /**
@@ -543,7 +505,6 @@ async function checkForThreeInARow(thisOptions) {
     return returnValue;
 }
 
-
 /**
  * Checks for winner by calling function to check for three in a row
  * return from three in a row is set to boolean for round won
@@ -562,7 +523,7 @@ async function checkWinner () {
         clearInterval(syncInterval); // clear the interval to stop updating the local status
         clearInterval(fromFileInterval); 
         clearInterval(toFileInterval); 
-        winnerMessage(); // call the winner message function to display the winner message
+        displayWinnerMessage(); // call the winner message function to display the winner message
         running = false;
 
         // Assign "O" to winner and "X" to loser
@@ -580,10 +541,7 @@ async function checkWinner () {
     }
     else if (!currentGameState.board.includes("")) {
 
-        clearInterval(syncInterval); // clear the interval to stop updating the local status
-        clearInterval(fromFileInterval); 
-        clearInterval(toFileInterval); 
-        DrawMessage(); // call the Draw function to display the draw message
+        displayDrawMessage(); // call the displayDrawMessage function to display the draw message
 
         running = false;
         await updateFileGameStateWithFilePicker(); // update the file game state with the file picker
@@ -756,31 +714,53 @@ async function safeSaveGameState(state) {
  * assign Player One and Player Two depending on the order of connection to the server
  * @returns {void} - displays a start message to the user
  */
-async function assignPlayerID() {
-    if (firstGame) {
-        // check if the current game state has player one or player two assigned
-        if (!currentGameState.isPlayerOne[0]) {
-            currentGameState.isPlayerOne[0] = true;
-            playerOne = true; 
-            // await RegisterPlayer(currentGameState); // post the game state to the server
-            console.log("playerOne set to " + currentGameState.isPlayerOne[0]);
+// async function assignPlayerID() {
+//     if (firstGame) {
+//         // check if the current game state has player one or player two assigned
+//         if (!currentGameState.isPlayerOne[0]) {
+//             currentGameState.isPlayerOne[0] = true;
+//             playerOne = true; 
+//             // await RegisterPlayer(currentGameState); // post the game state to the server
+//             console.log("playerOne set to " + currentGameState.isPlayerOne[0]);
 
-        } else if (!currentGameState.isPlayerTwo[0]) {
-            currentGameState.isPlayerTwo[0] = true;
-            playerTwo = true; 
-            // await RegisterPlayer(currentGameState); // post the game state to the server/
-            console.log("playerTwo set to " + currentGameState.isPlayerTwo[0]);
+//         } else if (!currentGameState.isPlayerTwo[0]) {
+//             currentGameState.isPlayerTwo[0] = true;
+//             playerTwo = true; 
+//             // await RegisterPlayer(currentGameState); // post the game state to the server/
+//             console.log("playerTwo set to " + currentGameState.isPlayerTwo[0]);
 
-        } else {
-            alert("Both players are already assigned. Please refresh the page to start a new game.");
-            // window.location.reload(); // close the window if both players are already assigned
-            return;
-        }
+//         } else {
+//             alert("Both players are already assigned. Please refresh the page to start a new game.");
+//             // window.location.reload(); // close the window if both players are already assigned
+//             return;
+//         }
 
-        await RegisterPlayer(currentGameState); // post the game state to the server
+//         await RegisterPlayer(currentGameState); // post the game state to the server
 
-        firstGame = false;
+//         firstGame = false;
+//     }
+// }
+
+/**
+ * assign Player One and Player Two depending on the order of connection to the server
+ */
+
+async function getPlayerIdFetch() {
+    const response = await fetch("http://127.0.0.1:8080/register", {
+        method: "POST"
+    });
+    const data = await response.json();
+        if (data.player === 'one') {
+        playerOne = true;
+        currentGameState.isPlayerOne[0] = true; // set player one to true
+    } else if (data.player === 'two') {
+        playerTwo = true;
+        currentGameState.isPlayerTwo[0] = true; // set player two to true
+    } else {
+        alert("Both players already assigned.");
     }
+
+    firstGame = false; // set first game to false so that the game can continue
 }
 
 /**
@@ -815,24 +795,24 @@ async function post_GameState(state)
  * @param {Object} state - The game state object to be sent to the server.
  * @returns {void} Resolves once the POST is completed and the lock is cleared.
  */
-async function RegisterPlayer(state) 
-{
-    fetch("http://127.0.0.1:8080/InitState", { // listen on the server not the browser port
-        method : "POST", 
-        headers:{
-            'content-type': 'application/json',
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify(state, null, 2) // extra params to format the JSON data
-    })
-    .then(response => response.text())
-    .then(data => {
-        console.log("Server message:", data); 
-    })
-    .catch(error => {
-        console.error("Fetch failed:", error);  
-    });
-}
+// async function RegisterPlayer(state) 
+// {
+//     fetch("http://127.0.0.1:8080/InitState", { // listen on the server not the browser port
+//         method : "POST", 
+//         headers:{
+//             'content-type': 'application/json',
+//             'Accept': 'application/json'
+//         },
+//         body: JSON.stringify(state, null, 2) // extra params to format the JSON data
+//     })
+//     .then(response => response.text())
+//     .then(data => {
+//         console.log("Server message:", data); 
+//     })
+//     .catch(error => {
+//         console.error("Fetch failed:", error);  
+//     });
+// }
 
 /**
  * Fetches the current game state from the server.

@@ -55,38 +55,6 @@ body {
     align-items: center;
 }
 
-#diceInputSection {
-  margin-bottom: 1rem;
-  padding: 20px;
-  text-align: center;
-
-  font-family: "Jersey 10", sans-serif;
-  font-size: 1.5rem;
-
-  background-color: black;
-  color: white;
-  border: 5px solid hsla(0, 0%, 100%, 0.562);
-  border-radius: 20px;
-  outline: 5px solid black;
-  outline-offset: 0px;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-#diceInputContainer input[type="number"] {
-  font-family: "Jersey 10", sans-serif;
-  font-size: 1.5rem;
-  padding: 10px;
-  width: 250px;
-
-  border-radius: 10px;
-  border: 2px solid black;
-  text-align: center;
-}
-
 
 /* selector for gameContainer class */
 .gameContainer {
