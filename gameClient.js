@@ -370,6 +370,7 @@ async function universalButtonToggle() {
 async function FlipCoin() {
 
     clearInterval(coinSync);
+    await getFetch_GameState(); // fetch the game state because there is no active server polling at this point
     let localCoinFlipResult = Math.random(); // Generate a random value between 0 and 1
 
     if (localCoinFlipResult <.5) {localCoinFlipResult = "Heads";} // Assign "Heads" if the random value is less than 0.5
@@ -406,7 +407,6 @@ async function compareCoinFlip() {
     }
 
     currentGameState.coinTossOver = true; // set coin toss over to true so that the game can continue
-    await safeSaveGameState(currentGameState); // save the game state to the server
     console.log("Coin toss is over. Player One Flip: " + currentGameState.playerOneFlip + " - Player Two Flip: " + currentGameState.playerTwoFlip);
 
     if (currentGameState.playerOneFlip === currentGameState.coinFlip)
@@ -421,10 +421,10 @@ async function compareCoinFlip() {
         currentGameState.isPlayerOne[1] = "O"; // set player one to O
     }
 
-    await safeSaveGameState(currentGameState); // save the game state to the server
 
     setUniversalButtonContent("Start");
     await pollSaveDuringGame(); 
+    await safeSaveGameState(currentGameState); // save the game state to the server
     prepareGameTurnLogicTick(); // ---------------- *HAS* ------------- LOCAL AND/OR FILE UPDATE
     universalButton.addEventListener("click", universalButtonToggle); // should not be null
 
@@ -701,7 +701,7 @@ async function initGameState_Fetch()
 async function safeSaveGameState(state) {
     isWriting = true;                           // lock
     await sleep(550);                           // give the GET interval a chance to skip
-    await post_GameState(state);                // do your POST
+    await post_GameState(state);                // POST
     isWriting = false;                          // unlock
 }
 
