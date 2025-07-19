@@ -352,8 +352,6 @@ async function universalButtonToggle() {
         FlipCoin(); // start the game by flipping a coin
     } 
     else if (universalButton.textContent === "Start") {
-        
-        await rematchGameInitialization(); // reinitialize the game state
         ButtonTextClear();
     } 
     else {
@@ -572,11 +570,8 @@ async function changePlayer() {
     } else {
         currentGameState.currentPlayer = "O";
     }
-  
-    clearInterval(fromFileInterval); 
-    clearInterval(toFileInterval); 
 
-    await updateFileGameStateWithFilePicker(); // update the file game state with the file picker
+    await safeSaveGameState(currentGameState); // save the game state to the server
     playerHasMoved = false; 
     await prepareGameTurnLogicTick();
 }
