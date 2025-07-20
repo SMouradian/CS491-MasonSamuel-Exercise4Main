@@ -162,7 +162,7 @@ async function pollSaveDuringGame(){
         }
         await getFetch_GameState();
         updateBoardFromGameState();
-    }, 450); // poll every second
+    }, 50); // poll every 50ms
 }
 
 /**
@@ -296,6 +296,7 @@ function changeWinnerColors(condition){
     cells[condition[0]].style.color = "red";
     cells[condition[1]].style.color = "red";
     cells[condition[2]].style.color = "red";
+    cells[condition[3]].style.color = "red"; // added for 4 in a row
     console.log(currentGameState);
 }
 
@@ -351,9 +352,8 @@ async function universalButtonToggle(){
     } 
     else if(universalButton.textContent === "Start"){
         
+        initGameUI(); // set game to running an re init the winner of the the new game 
         await pollSaveDuringGame(); 
-        running = true; 
-        initGameUI();
         setUniversalButtonContent("Clear");
         initalizeCellsUI();
     } 
@@ -423,7 +423,6 @@ async function compareCoinFlip(){
     setUniversalButtonContent("Clear");
     await safeSaveGameState(currentGameState); // save the game state to the server
     await pollSaveDuringGame();
-    // prepareGameTurnLogicTick(); 
     initalizeCellsUI();
     universalButton.addEventListener("click", universalButtonToggle); // should not be null
 }
@@ -434,16 +433,22 @@ async function pollCoinFlipResult(){
         const jData = await response.json();
         currentGameState = jData; // copy the server token to the local token
 
-        if(currentGameState.playerOneFlip === currentGameState.playerTwoFlip && currentGameState.playerOneFlip !== null){
-            currentGameState.playerOneFlip = currentGameState.coinFlip; // set player one flip to the coin flip
-            currentGameState.playerTwoFlip = "tied"; // set player two flip to tied which is not a valid flip
-            await safeSaveGameState(currentGameState); // save game state to server
-        }
-        else if(currentGameState.coinTossOver){
+        // if(currentGameState.playerOneFlip === currentGameState.playerTwoFlip && currentGameState.playerOneFlip !== null){
+        //     currentGameState.playerOneFlip = currentGameState.coinFlip; // set player one flip to the coin flip
+        //     currentGameState.playerTwoFlip = "tied"; // set player two flip to tied which is not a valid flip
+        //     await safeSaveGameState(currentGameState); // save game state to server
+        //     setUniversalButtonContent("Clear");
+        //     await pollSaveDuringGame(); 
+        //     initalizeCellsUI();
+        //     universalButton.addEventListener("click", universalButtonToggle); // should not be null
+        //     clearInterval(coinSync);
+        // }
+        // else 
+
+        if(currentGameState.coinTossOver){
             // Both players have flipped, no need to flip again
             setUniversalButtonContent("Clear");
             await pollSaveDuringGame(); 
-            // prepareGameTurnLogicTick(); 
             initalizeCellsUI();
             universalButton.addEventListener("click", universalButtonToggle); // should not be null
             clearInterval(coinSync);
@@ -485,6 +490,7 @@ async function checkForFourInARow(thisOptions){
             changeWinnerColors(condition); // change the color of the winning cells to red
             currentGameState.winCondition = condition; // set the win condition to the current condition
             currentGameState.winner = currentGameState.currentPlayer; // set the winner in the current game state
+            safeSaveGameState(currentGameState); 
             // await updateFileGameStateWithFilePicker(); // update the file game state with the file picker
 
             returnValue = 1;
@@ -530,8 +536,6 @@ async function checkWinner(){
     else if((playerOne && currentGameState.isPlayerOne[1] === currentGameState.currentPlayer) || (playerTwo && currentGameState.isPlayerTwo[1] === currentGameState.currentPlayer)){
         await changePlayer();
     }
-    // await prepareGameTurnLogicTick();
-    // initalizeCellsUI();
 }
 
 
@@ -563,23 +567,6 @@ async function changePlayer(){
 
 
 /**
- * If the player has not moved yet, this function will prepare the game turn logic tick that updates the file
- * The additonal player logic is to update the local game state with the file picker and update the board from the current game state 
- */
-async function prepareGameTurnLogicTick(){
-    initalizeCellsUI();  // Adds event listener to each cell
-
-    if(!playerHasMoved && ((playerOne && currentGameState.isPlayerOne[1] === currentGameState.currentPlayer) || (playerTwo && currentGameState.isPlayerTwo[1] === currentGameState.currentPlayer))){
-        // updateBoardFromGameState(); // update the board from the current game state 
-        playerHasMoved = true;
-    }
-    // else if (playerHasMoved === false){ // if the player has not moved yet, not updating the game state while the player is making a move
-        
-    // }
-}
-
-
-/**
  * clears intervals and resets the game state to allow for a new game
  * also resets the cells and status text
  * as well as updating the file game state with the file picker and changing running to false 
@@ -591,10 +578,13 @@ async function restartGame(){
     clearInterval(syncSave); // clear the interval to stop and to stop status context updates
     displayCurrentPlayerForStatusText();
     restartStatusAndCells();
+    initalizeCellsUI(); // make cells unclickable
 
     //reinitialize the game state to the file system
+    currentGameState.board = Array(16).fill("");
     await safeSaveGameState(currentGameState);
-    await getFetch_NewGame();
+    // await getFetch_NewGame();
+    console.log("game state after restart: ", currentGameState);
 }
 
 /**
@@ -630,7 +620,7 @@ async function safeSaveGameState(state){
     }
 
     isWriting = true;                           // lock
-    await sleep(550);                           // give the GET interval a chance to skip
+    await sleep(100);                           // give the GET interval a chance to skip
     await post_GameState(state);                // POST
     isWriting = false;                          // unlock
 }
