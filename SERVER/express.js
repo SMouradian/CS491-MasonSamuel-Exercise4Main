@@ -21,7 +21,8 @@ let gameState = {
     isPlayerTwo: [false, ""], // true if player two is connected
     winCondition: null,
     winner: null,
-    coinTossOver: false
+    coinTossOver: false, 
+    forfeit: false // true if a player has forfeited the game
 };
 
 // const gameSavePath = path.join(__dirname, '../data/db.json');
@@ -128,7 +129,8 @@ function resetGameSave() {
         isPlayerTwo: [false, ""],
         winCondition: null,
         winner: null, 
-        coinTossOver: false 
+        coinTossOver: false,
+        forfeit: false // Reset forfeit state
     };
 
     console.log("Game state has been reset from null state.");

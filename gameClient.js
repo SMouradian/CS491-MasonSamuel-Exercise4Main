@@ -42,7 +42,8 @@ let currentGameState = {
     isPlayerTwo: [false, ""], // true if player two is connected
     winCondition: null,
     winner: null,
-    coinTossOver: false
+    coinTossOver: false,
+    forfeit: false
 };
 let isWriting = false;
 
@@ -104,7 +105,7 @@ document.addEventListener("keydown", (event) => {
         displayStartMessage(); // tell Player to flip coin
 
         // try fetch game state from the server 
-        await sleep(2000);
+        // await sleep(1000);
         await initGameState_Fetch(); // test the connection to the server
         await getFetch_GameState(); // fetch the game state from the server to init currentGameState
         // await assignPlayerID(); // assign player one or two, calls register player // DO ONCE
@@ -170,6 +171,11 @@ async function pollSaveDuringGame(){
         displayPlayerInformation();
         if(isWriting){
             return; // skip if we’re currently writing
+        }
+        else if (currentGameState.forfeit){
+            restartGame(); // restart the game if a player has forfeited
+            currentGameState.forfeit = false; // reset forfeit state
+            return;
         }
         await getFetch_GameState();
         updateBoardFromGameState();
@@ -341,9 +347,10 @@ function changeBoardVisibility(){
 function restartStatusAndCells(){
     cells.forEach(cell => cell.textContent = "");
 
-    if(currentGameState.winner === null){
+    if(currentGameState.forfeit){
         currentGameState.winner = "O";
         statusText.textContent = `No winner! Press Start to play again!`;
+        currentGameState.forfeit = true;
     }
 }
 
@@ -364,15 +371,17 @@ async function universalButtonToggle(){
         FlipCoin(); // start the game by flipping a coin
     } 
     else if(universalButton.textContent === "Start"){
-
+        console.log("game state at start: ", currentGameState);
         console.log(currentGameState);
         await pollSaveDuringGame(); 
         initGameUI(); // set game to running an re init the winner of the the new game ///// this is clearning the game state????
+        console.log("game state after start: ", currentGameState);
         
         setUniversalButtonContent("Clear");
-        // initalizeCellsUI();
+        initalizeCellsUI();
     } 
     else{
+        console.log("game state before restart: ", currentGameState);
         await restartGame(); // clears board and stops game
         setUniversalButtonContent("Start");
         // this may need to clear the poll save or something. need to test out this
@@ -592,6 +601,7 @@ async function restartGame(){
     await safeSaveGameState(currentGameState);
     // await getFetch_NewGame();
     console.log("game state after restart: ", currentGameState);
+    setUniversalButtonContent
 }
 
 /**
