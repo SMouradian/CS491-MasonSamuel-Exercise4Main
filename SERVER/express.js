@@ -71,6 +71,7 @@ app.post("/State", (request, response) => {
 
     gameState = request.body; // Update the game state with the request body
     response.send("Game State has been saved."); // Send a response indicating the game state has been saved
+    console.log("current game state from client that has been updated to server");
     console.log(request.body);
 })
 

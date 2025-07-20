@@ -32,7 +32,18 @@ const universalButton = document.querySelector("#universalButton"); // query sel
 const playerDiceRollGuessInput = document.querySelector("#diceInputContainer"); // query select the input for the dice roll guess
 const rollDiceButton = document.querySelector("#RollDice"); // query select the button for rolling the dice
 
-let currentGameState = {};
+let currentGameState = {
+    board: Array(16).fill(""),
+    currentPlayer: "",
+    playerOneFlip: null,
+    playerTwoFlip: null,
+    coinFlip: "Tails",
+    isPlayerOne: [false, ""], // true if player one is connected
+    isPlayerTwo: [false, ""], // true if player two is connected
+    winCondition: null,
+    winner: null,
+    coinTossOver: false
+};
 let isWriting = false;
 
 const winConditions = [
@@ -215,12 +226,14 @@ async function cellClicked(event){
     const cellIndex = event.target.getAttribute("cellIndex"); // this refers to what ever cell is clicked on screen by user
 
     console.log("Cell clicked at index: " + cellIndex);
+    // clearInterval(syncSave);
 
     if(currentGameState.board[cellIndex] != "" || !running){
         return;
     }
 
     await updateUsersChoiceCell(event.target, cellIndex); // ---------------- *HAS* ------------- LOCAL AND/OR FILE UPDATE
+    console.log("Saving from cell clicked");
     await safeSaveGameState(currentGameState); // save the game state to the server
     await checkWinner(); // this function calls change player and checks for a winner ---------------- *HAS* ------------- LOCAL AND/OR FILE UPDATE
 }
@@ -234,6 +247,8 @@ async function cellClicked(event){
 async function updateUsersChoiceCell(cellClicked, index){
     currentGameState.board[index] = currentGameState.currentPlayer;
     cells[index].textContent = currentGameState.currentPlayer; // update the cell with the current player's choice
+    console.log("save from inside of the updateUsersChoiceCell: ", currentGameState);
+    await safeSaveGameState(currentGameState);
 }
 
 
@@ -332,8 +347,6 @@ function restartStatusAndCells(){
     }
 }
 
-
-
 /*****************************************************************************************
 * *****************************************************************************************
 * *****************************************************************************************
@@ -351,11 +364,13 @@ async function universalButtonToggle(){
         FlipCoin(); // start the game by flipping a coin
     } 
     else if(universalButton.textContent === "Start"){
-        
-        initGameUI(); // set game to running an re init the winner of the the new game 
+
+        console.log(currentGameState);
         await pollSaveDuringGame(); 
+        initGameUI(); // set game to running an re init the winner of the the new game ///// this is clearning the game state????
+        
         setUniversalButtonContent("Clear");
-        initalizeCellsUI();
+        // initalizeCellsUI();
     } 
     else{
         await restartGame(); // clears board and stops game
@@ -433,18 +448,6 @@ async function pollCoinFlipResult(){
         const jData = await response.json();
         currentGameState = jData; // copy the server token to the local token
 
-        // if(currentGameState.playerOneFlip === currentGameState.playerTwoFlip && currentGameState.playerOneFlip !== null){
-        //     currentGameState.playerOneFlip = currentGameState.coinFlip; // set player one flip to the coin flip
-        //     currentGameState.playerTwoFlip = "tied"; // set player two flip to tied which is not a valid flip
-        //     await safeSaveGameState(currentGameState); // save game state to server
-        //     setUniversalButtonContent("Clear");
-        //     await pollSaveDuringGame(); 
-        //     initalizeCellsUI();
-        //     universalButton.addEventListener("click", universalButtonToggle); // should not be null
-        //     clearInterval(coinSync);
-        // }
-        // else 
-
         if(currentGameState.coinTossOver){
             // Both players have flipped, no need to flip again
             setUniversalButtonContent("Clear");
@@ -469,7 +472,7 @@ async function pollCoinFlipResult(){
 async function checkForFourInARow(thisOptions){
     let returnValue = 0;
 
-    for(let i = 0; i < winConditions.length/*8*/; i++){
+    for(let i = 0; i < winConditions.length/*15*/; i++){
 
         // so if condition is winConditions at index [0] it would be [0,1,2]
         // lets just say the options are all still empty " "
@@ -490,7 +493,8 @@ async function checkForFourInARow(thisOptions){
             changeWinnerColors(condition); // change the color of the winning cells to red
             currentGameState.winCondition = condition; // set the win condition to the current condition
             currentGameState.winner = currentGameState.currentPlayer; // set the winner in the current game state
-            safeSaveGameState(currentGameState); 
+            console.log("Save from checkForFourInARow: ", currentGameState);
+            await safeSaveGameState(currentGameState); 
             // await updateFileGameStateWithFilePicker(); // update the file game state with the file picker
 
             returnValue = 1;
@@ -531,6 +535,7 @@ async function checkWinner(){
     else if(!currentGameState.board.includes("")){
         displayDrawMessage(); // call the displayDrawMessage function to display the draw message
         running = false;
+        console.log("save from check winner, draw: ", currentGameState);
         await safeSaveGameState(currentGameState); // save the game state to the server
     }
     else if((playerOne && currentGameState.isPlayerOne[1] === currentGameState.currentPlayer) || (playerTwo && currentGameState.isPlayerTwo[1] === currentGameState.currentPlayer)){
@@ -575,7 +580,9 @@ async function restartGame(){
     running = false; // set running to false so that the game is not running anymore
 
     // this is here just in case some one end the game early 
-    clearInterval(syncSave); // clear the interval to stop and to stop status context updates
+    if (syncSave){
+        clearInterval(syncSave); // clear the interval to stop and to stop status context updates
+    }
     displayCurrentPlayerForStatusText();
     restartStatusAndCells();
     initalizeCellsUI(); // make cells unclickable
@@ -613,14 +620,12 @@ async function initGameState_Fetch(){
  */
 async function safeSaveGameState(state){
 
-    if (currentGameState.currentPlayer === "O" || currentGameState.currentPlayer === "X"){
-        console.log("Saving game state for the player:")
-    } else {
-        console.log(currentGameState);
-    }
+    
+    console.log("Saving game state for the player:")
+   
 
     isWriting = true;                           // lock
-    await sleep(100);                           // give the GET interval a chance to skip
+    // await sleep(200);                           // give the GET interval a chance to skip
     await post_GameState(state);                // POST
     isWriting = false;                          // unlock
 }
