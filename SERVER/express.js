@@ -23,7 +23,6 @@ let gameState = {
         winner: null, 
         coinTossOver: false,
         forfeit: false, // Reset forfeit state
-        startNewGame: false,
         bWriteLock: false
     };
 
@@ -128,7 +127,6 @@ function resetGameSave() {
         winner: null, 
         coinTossOver: false,
         forfeit: false, // Reset forfeit state
-        startNewGame: false,
         bWriteLock: false
     };
 

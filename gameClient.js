@@ -44,7 +44,6 @@ let currentGameState = {
         winner: null, 
         coinTossOver: false,
         forfeit: false, // Reset forfeit state
-        startNewGame: false,
         bWriteLock: false
     };
 let isWriting = false;
@@ -79,7 +78,7 @@ let running = false; // used to determine if the game is running or not
 let playerOne = false; // used to determine if the player is player one or two
 let playerTwo = false; // used to determine if the player is player one or two
 let playerHasMoved = false; // used to determine which player can move 
-let syncSave, coinSync, syncListener; 
+let syncSave, coinSync; 
 
 
 
@@ -120,7 +119,6 @@ document.addEventListener("keydown", (event) => {
         document.querySelector(".button-row-container").style.display = "flex";
     }
     catch(error){
-        await sleep(1000);
         console.error("Connection failed:", error);
         document.getElementById("ConnectionScreen").innerHTML = `<h1>Connection Failed. Refresh the page</h1>`;
     }
@@ -169,28 +167,13 @@ async function pollSaveDuringGame(){
         }
         else if (currentGameState.forfeit){
             restartGame(); // restart the game if a player has forfeited
-            activeServerListener(); // start the server listener to listen for new game state
-            currentGameState.forfeit = false; // reset forfeit state
             setUniversalButtonContent("Start");
+            // await pollSaveDuringGame(); // restart the polling
             return;
         }
         await getFetch_GameState();
         updateBoardFromGameState();
     }, 50); // poll every 50ms
-}
-
-async function activeServerListener() {
-    syncListener = setInterval(async () => {
-        await getFetch_GameState();
-        if (currentGameState.startNewGame) {
-            await startNewGame(); // start new game has been called from other player, inside will clear interval
-            currentGameState.startNewGame = false; // reset start new game state
-            safeSaveGameState(currentGameState); // save the game state to the server
-            clearInterval(syncListener); // clear listener that is waiting for new game 
-        }
-
-        // console.log("Active server listener is running");
-    }, 50);
 }
 
 /**
@@ -229,7 +212,7 @@ function toggleCellsListener() {
     console.log("Reinitializing cells with event listeners for cellClicked");
     cells.forEach(cell => cell.removeEventListener("click", cellClicked)); // remove the event listener for cellClicked to prevent multiple clicks
     cells.forEach(cell => cell.addEventListener("click", cellClicked)); // addEventListener(type, listener) 
-    // cells.forEach(color => color.style.color = "black"); // reset color for all cell text content
+    cells.forEach(color => color.style.color = "black"); // reset color for all cell text content
 }
 
 
@@ -385,28 +368,24 @@ async function universalButtonToggle(){
         FlipCoin(); // start the game by flipping a coin
     } 
     else if(universalButton.textContent === "Start"){
-        currentGameState.startNewGame = true; // set start new game to true
+        currentGameState.forfeit = false; // reset forfeit state
         await safeSaveGameState(currentGameState); // save the game state to the server
-        await startNewGame();
+        initGameUI(); 
+        toggleCellsListener();
+        await pollSaveDuringGame(); 
+        setUniversalButtonContent("Clear");
+
     } 
-    else if (universalButton.textContent === "Clear"){
+    else if (universalButton.textContent === "Clear") {
         console.log("game state before restart: ", currentGameState);
         await restartGame(); // clears board and stops game
-        
-        await activeServerListener(); // start the server listener to start new game
         setUniversalButtonContent("Start");
+        // await pollSaveDuringGame(); 
     }
     console.log("hello from universalButtonToggle");
 }
 
-async function startNewGame(){ 
-    initGameUI(); // set game to running an re init the winner of the the new game ///// this is clearning the game state????
-    toggleCellsListener();
-    clearInterval(syncListener); // clear listener that is waiting for new game 
-    pollSaveDuringGame(); 
-    setUniversalButtonContent("Clear");
 
-}
 
 /**
  * Handles the dice roll guessing phase to determine which player goes first.
@@ -588,15 +567,10 @@ async function changePlayer(){
  */
 async function restartGame(){
     running = false; // set running to false so that the game is not running anymore
-    // setUniversalButtonContent("Start");
-
+    setUniversalButtonContent("Start"); 
     // this is here just in case some one end the game early 
-    console.log("sync Save Value: ", syncSave);
-    if (syncSave){
-        clearInterval(syncSave); // clear the interval to stop and to stop status context updates
-        syncSave = null; // reset syncSave to null
-    }
-
+    clearInterval(syncSave); // clear the interval to stop and to stop status context updates
+   
     restartStatusAndCells(); // This calls the message to display no winner AND OR clears the cells
     if (!currentGameState.forfeit) {
         displayLastWinnerMessage();
@@ -605,6 +579,7 @@ async function restartGame(){
 
     //reinitialize the game state to the file system
     currentGameState.board = Array(16).fill("");
+    currentGameState.winCondition = null;
     await safeSaveGameState(currentGameState);
     console.log("game state after restart: ", currentGameState);
 }
