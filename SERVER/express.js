@@ -59,6 +59,10 @@ app.get("/State", (request, response) => {
 	
 })
 
+app.get("/NewGame", (request, response) => {
+    ReNewGameSave(); // Reset the game state to its initial values
+    response.json(gameState); // Send the new game state as a JSON response
+});
 
 app.post("/State", (request, response) => {
     // fs.writeFileSync(gameSavePath, JSON.stringify(request.body, null, 2)); // Write the request body to state.json
@@ -127,6 +131,12 @@ function resetGameSave() {
     };
 
     console.log("Game state has been reset from null state.");
+}
+
+function ReNewGameSave() {
+    // Reset the game state to its initial values
+    gameState.board = Array(16).fill(""); // Reset the board to empty
+    console.log("Game BOARD has been emptied.");
 }
 
 process.on('SIGINT', () => {

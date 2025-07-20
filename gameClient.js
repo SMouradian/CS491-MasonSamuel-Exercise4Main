@@ -14,7 +14,6 @@
 * *****************************************************************************************                           
 *****************************************************************************************/
 
-
 /**
  * @param {boolean} running - the current state of the game, whether it is running or not 
  * @param {number[][]} winConditions - 2d array of possible win conditions with in the gam e
@@ -36,6 +35,22 @@ const rollDiceButton = document.querySelector("#RollDice"); // query select the 
 let currentGameState = {};
 let isWriting = false;
 
+const winConditions = [
+    // horizontal
+    [0,1,2,3], // 3
+    [4,5,6,7], // 12
+    [8,9,10,11], // 21
+    [12,13,14,15], // 30
+    // vertical
+    [0,4,8,12], // 9
+    [1,5,9,13], // 12
+    [2,6,10,14], // 15
+    [3,7,11,15], // 18
+    // diagonal
+    [0,5,10,15], // 12
+    [3,6,9,12]  // 12
+
+];
 
 /**
  * @type {boolean} firstGame - used to determine if the game is being played for the first time
@@ -45,20 +60,20 @@ let isWriting = false;
  * @type {boolean} bothPlayersHaveGuessed - used to determine if both players have guessed
  * @type {boolean} playerHasMoved - used to determine which player can move
  */
-
 let firstGame = true;
 let running = false; // used to determine if the game is running or not
 let playerOne = false; // used to determine if the player is player one or two
 let playerTwo = false; // used to determine if the player is player one or two
 let playerHasMoved = false; // used to determine which player can move 
-// let coinTossOver = false;
 let syncSave, coinSync; 
+
+
 
 /*************************************************************************************************************************************************** */
 
 // reset the server game state to its initial values so you dont have to restart the server
 document.addEventListener("keydown", (event) => {
-    if (event.key === "r") {
+    if(event.key === "r"){
         initGameState_Fetch();
     }
 });
@@ -69,7 +84,7 @@ document.addEventListener("keydown", (event) => {
 // test connection to the server, then fetch the current game state that has been saved on the server. Should be null
 // assign player one or two depending on the order of connection to the server
 (async () => {
-    try {
+    try{
         // Show the connection screen and hide the game UI 
         document.querySelector(".gameContainer").style.display = "none";
         document.querySelector(".button-row-container").style.display = "none";
@@ -89,8 +104,8 @@ document.addEventListener("keydown", (event) => {
         document.getElementById("ConnectionScreen").remove();
         document.querySelector(".gameContainer").style.display = "flex";
         document.querySelector(".button-row-container").style.display = "flex";
-
-    } catch (error) {
+    }
+    catch(error){
         await sleep(1000);
         console.error("Connection failed:", error);
         document.getElementById("ConnectionScreen").innerHTML = `<h1>Connection Failed. Refresh the page</h1>`;
@@ -98,7 +113,7 @@ document.addEventListener("keydown", (event) => {
 
     
 
-    if ((currentGameState.playerOneGuess !== null && currentGameState.playerTwoGuess !== null) && !running) {
+    if((currentGameState.playerOneGuess !== null && currentGameState.playerTwoGuess !== null) && !running){
         running = true;
         changeBoardVisibility(); // show the game board
     }
@@ -112,16 +127,15 @@ universalButton.addEventListener("click", universalButtonToggle); // should not 
  * it is called from the reinitialzed game async function
  * it is also called from with the function ChooseStartingPlayerByRollingDice
  */
-function displayPlayerInformation() {
+function displayPlayerInformation(){
     // display the current player information in the status text
-    // if (!currentGameState.coinTossOver) {
-    //     statusText.textContent = `Waiting for both players to flip their coins...`;
-    // } 
-    if ((currentGameState.isPlayerOne[1] !== "" && playerOne) && (currentGameState.isPlayerOne[1] === currentGameState.currentPlayer)) {
+    if((currentGameState.isPlayerOne[1] !== "" && playerOne) && (currentGameState.isPlayerOne[1] === currentGameState.currentPlayer)){
         statusText.textContent = `Player One you are ${currentGameState.isPlayerOne[1]} your turn to move!`;
-    } else if ((currentGameState.isPlayerTwo[1] !== "" && playerTwo) && (currentGameState.isPlayerTwo[1] === currentGameState.currentPlayer)) {
+    }
+    else if((currentGameState.isPlayerTwo[1] !== "" && playerTwo) && (currentGameState.isPlayerTwo[1] === currentGameState.currentPlayer)){
         statusText.textContent = `Player Two you are ${currentGameState.isPlayerTwo[1]} your turn to move!`;
-    } else {
+    }
+    else{
         statusText.textContent = `waiting for opponent's turn...`;
     }
 }
@@ -129,29 +143,26 @@ function displayPlayerInformation() {
  /**
  * displays a message in the status text indicating that both players are waiting for their guesses
  */
-function displayAwaitCoinFlip() {
+function displayAwaitCoinFlip(){
     statusText.textContent = `Waiting for both players to flip their coins...`;
 }
-
 /**
- * updates the status box on an interval to display the player information does this  every .25 seconds
+ * Polls the server for game state updates during the game
+ * calling GET to get the current game state
+ * updates the local game state with the server game state
+ * update the board from the current game state
  */
-
-function updateStatusBoxOnInterval() {
-    syncInterval = setInterval(() => {
-
-        displayPlayerInformation(); // display the player information in the status text --------------------- NO LOCAL OR FILE UPDATE
-    }, 250);
-}
-
-async function pollSaveDuringGame() {
-    
+async function pollSaveDuringGame(){
     // Interval loop to fetch game state
+    console.log("Polling for game state updates... and updating the board");
     syncSave = setInterval(async () => {
         displayPlayerInformation();
-        if (isWriting) return; // skip if we’re currently writing
+        if(isWriting){
+            return; // skip if we’re currently writing
+        }
         await getFetch_GameState();
-    }, 500); // poll every second
+        updateBoardFromGameState();
+    }, 450); // poll every second
 }
 
 /**
@@ -159,16 +170,15 @@ async function pollSaveDuringGame() {
  * gives functionality to start a game and removes the event listener from the start button
  * and creates and event listener for the clear button which calls restart game on click
  */
+async function initGameUI(){
 
-async function initGameUI() {
-
-    if (!running) {
+    if(!running){
         running = true;
         changeBoardVisibility(); // show the game board
     }
 
     // if a game has already been played
-    if (currentGameState.isPlayerOne[1] !== "" && currentGameState.isPlayerTwo[1] !== "") {
+    if(currentGameState.isPlayerOne[1] !== "" && currentGameState.isPlayerTwo[1] !== ""){
         // initGameState_Fetch(); // fetch the game state from the server to init currentGameState
         currentGameState.winner = null; // reset the winner
 
@@ -180,11 +190,17 @@ async function initGameUI() {
 /**
  * reinitializes the cells with the event listener for cellClicked
  */
-
-function initalizeCellsUI() {
+function initalizeCellsUI(){
+    // cells.forEach(cell => cell.replaceWith(cell.cloneNode(true)));  // Clears old listeners
+    // cells.forEach(cell => cell.addEventListener("click", cellClicked));
+    if (!running) {
+        cells.forEach(cell => cell.removeEventListener("click", cellClicked)); // remove the event listener for cellClicked to prevent multiple clicks
+        return;
+    } 
+    console.log("Reinitializing cells with event listeners for cellClicked");
     cells.forEach(cell => cell.removeEventListener("click", cellClicked)); // remove the event listener for cellClicked to prevent multiple clicks
     cells.forEach(cell => cell.addEventListener("click", cellClicked)); // addEventListener(type, listener) 
-    cells.forEach(color => color.style.color = "black"); // reset color for all cell text content
+    // cells.forEach(color => color.style.color = "black"); // reset color for all cell text content
 }
 
 
@@ -195,12 +211,12 @@ function initalizeCellsUI() {
  * @param {MouseEvent} event - web browser provided object that gives us feedback when mouse action is provided
  * for this instance we are looking for a cellindex to be clicked
  */
-
-async function cellClicked(event) {
-
+async function cellClicked(event){
     const cellIndex = event.target.getAttribute("cellIndex"); // this refers to what ever cell is clicked on screen by user
 
-    if (currentGameState.board[cellIndex] != "" || !running ) {
+    console.log("Cell clicked at index: " + cellIndex);
+
+    if(currentGameState.board[cellIndex] != "" || !running){
         return;
     }
 
@@ -215,27 +231,25 @@ async function cellClicked(event) {
  * @param {number} index - The index of the cell in the currentGameState.board array
  * @param {html} cell - the cell element that was clicked during the event that was stored from cellClicked
  */
-
-async function updateUsersChoiceCell (cellClicked, index) {
-
+async function updateUsersChoiceCell(cellClicked, index){
     currentGameState.board[index] = currentGameState.currentPlayer;
     cells[index].textContent = currentGameState.currentPlayer; // update the cell with the current player's choice
 }
 
 
-function updateBoardFromGameState() {
-    for (let i = 0; i < cells.length; i++) {
+function updateBoardFromGameState(){
+    for(let i = 0; i < cells.length; i++){
         cells[i].textContent = currentGameState.board[i];
     }
 
-    if (currentGameState.winCondition !== null) {
+    if(currentGameState.winCondition !== null){
         changeWinnerColors(currentGameState.winCondition); // change the text color of the winning cells
         clearInterval(syncSave); 
         statusText.textContent = `${currentGameState.currentPlayer} wins! Press Clear to restart game`;
 
         running = false; // set running to false so that the game is not running anymore
     }
-    else if (!currentGameState.board.includes("")) {
+    else if(!currentGameState.board.includes("")){
         clearInterval(syncSave); // clear the interval to stop updating the local status
         statusText.textContent = `Draw! Press Clear to restart game`;
 
@@ -243,16 +257,14 @@ function updateBoardFromGameState() {
     }
 }
 
-
 /**
  * updates status text based on the current game state
  */
-
-function displayDrawMessage() {
+function displayDrawMessage(){
     statusText.textContent = `Draw! Press Clear to restart game`;
 }
 
-function displayWinnerMessage() {
+function displayWinnerMessage(){
     statusText.textContent = `${currentGameState.currentPlayer} wins! Press Clear to restart game`;
 }
 
@@ -261,9 +273,8 @@ function displayWinnerMessage() {
  * displays a message to the user to press start to play the game
  * this is called when the game is first started or when a new game is created
  */
-
-function displayStartMessage() {
-    if (firstGame) {
+function displayStartMessage(){
+    if(firstGame){
         // document.querySelector(".tooltiptext").style.visibility = "visible";
         statusText.textContent = `Please press FlipCoin to play!`;
     }
@@ -273,29 +284,22 @@ function displayStartMessage() {
  * display the current player whos turn it is to move 
  * current player will display within the html element with statustext id 
  */
-
-function displayCurrentPlayerForStatusText() {
-
+function displayCurrentPlayerForStatusText(){
     statusText.textContent = `${currentGameState.currentPlayer} won the last game! Press start to play again!`;
-    document.querySelector(".tooltiptext").style.visibility = "hidden";
-    if (syncInterval) {
-        clearInterval(syncInterval); // clear the interval to stop updating the local game state
-    }
 }
 
 /**
  * gets specific elements that were verified for win and then changes the text content color of those cells
  * @param {number[]} condition - array of win elements that were the condition for winning 
  */
-
-function changeWinnerColors(condition) {
-            
+function changeWinnerColors(condition){    
     cells[condition[0]].style.color = "red";
     cells[condition[1]].style.color = "red";
     cells[condition[2]].style.color = "red";
+    console.log(currentGameState);
 }
 
-function setUniversalButtonContent(content) {
+function setUniversalButtonContent(content){
     universalButton.textContent = content;
 }
 
@@ -304,11 +308,11 @@ function setUniversalButtonContent(content) {
  * changes the visibility of the game board based on the running state
  * if running is true, the game board is visible, otherwise it is hidden    
  */
-
-function changeBoardVisibility() {
-    if (running) {
+function changeBoardVisibility(){
+    if(running){
         document.getElementById("cellContainer").style.visibility = "visible"; // show the game board
-    } else {
+    }
+    else{
         document.getElementById("cellContainer").style.visibility = "hidden"; // hide the game board
     }
 }
@@ -318,12 +322,10 @@ function changeBoardVisibility() {
  * clears the cells and resets the status text to indicate no winner if there is no winner
  * also sets the winner to "O" so that the game can continue with O as the first player
  */
-
-function restartStatusAndCells() {
+function restartStatusAndCells(){
     cells.forEach(cell => cell.textContent = "");
-    ButtonTextStart();
 
-    if (currentGameState.winner === null) {
+    if(currentGameState.winner === null){
         currentGameState.winner = "O";
         statusText.textContent = `No winner! Press Start to play again!`;
     }
@@ -338,27 +340,28 @@ function restartStatusAndCells() {
 * *****************************************************************************************
 * *****************************************************************************************                          
 *****************************************************************************************/
-
-
 /**
  * this function is to pick which way the board is initialized
  * it will either start the game with a dice roll or not or it will clear the board
  */
-
-async function universalButtonToggle() {
-    if (universalButton.textContent === "Flip Coin") {
+async function universalButtonToggle(){
+    if(universalButton.textContent === "Flip Coin"){
         universalButton.removeEventListener("click", universalButtonToggle); 
-        
         FlipCoin(); // start the game by flipping a coin
     } 
-    else if (universalButton.textContent === "Start") {
-        ButtonTextClear();
+    else if(universalButton.textContent === "Start"){
+        
+        await pollSaveDuringGame(); 
+        running = true; 
+        initGameUI();
+        setUniversalButtonContent("Clear");
+        initalizeCellsUI();
     } 
-    else {
+    else{
         await restartGame(); // clears board and stops game
-        ButtonTextStart();
+        setUniversalButtonContent("Start");
+        // this may need to clear the poll save or something. need to test out this
     }
-
     console.log("hello from universalButtonToggle");
 }
 
@@ -366,42 +369,39 @@ async function universalButtonToggle() {
  * Handles the dice roll guessing phase to determine which player goes first.
  * Updates game state with guesses, rolls the dice, assigns "O" and "X", and prepares the game start.
  */
-
-async function FlipCoin() {
-
-    clearInterval(coinSync);
+async function FlipCoin(){
+    
     await getFetch_GameState(); // fetch the game state because there is no active server polling at this point
     let localCoinFlipResult = Math.random(); // Generate a random value between 0 and 1
 
-    if (localCoinFlipResult <.5) {localCoinFlipResult = "Heads";} // Assign "Heads" if the random value is less than 0.5
-    else {localCoinFlipResult = "Tails";} // not heads so tails
+    if(localCoinFlipResult <.5){
+        localCoinFlipResult = "Heads";  // Assign "Heads" if the random value is less than 0.5
+    }
+    else{
+        localCoinFlipResult = "Tails";  // not heads so tails
+    }
 
     // set game state coin flip to the local coin flip result
-    if (playerOne === true) {
+    if (playerOne === true){
         currentGameState.playerOneFlip = localCoinFlipResult;
         await safeSaveGameState(currentGameState)
-    } else if (playerTwo === true) {
+    }
+    else if (playerTwo === true){
         currentGameState.playerTwoFlip = localCoinFlipResult;
         await safeSaveGameState(currentGameState);
     }
-
     compareCoinFlip(); // compare the coin flip results of both players
 }
 
-async function compareCoinFlip() {
-
+async function compareCoinFlip(){
     // only one of these should be true at this point if any at all. 
-    if (currentGameState.playerOneFlip === null || currentGameState.playerTwoFlip === null) {
+    if(currentGameState.playerOneFlip === null || currentGameState.playerTwoFlip === null){
         pollCoinFlipResult(); // poll the server for the coin flip results
         displayAwaitCoinFlip();
         return;
     }
-
     // Both players flipped — check for a tie - if tie set player one to winner and player two to loser
-    if (currentGameState.playerOneFlip === currentGameState.playerTwoFlip) {
-        // await sleep(500);
-        // FlipCoin(); // both players have the same coin flip, so we will flip again
-        // return; // DO NOT flip here, just wait
+    if(currentGameState.playerOneFlip === currentGameState.playerTwoFlip){
         currentGameState.playerOneFlip = currentGameState.coinFlip; // set player one flip to the coin flip
         currentGameState.playerTwoFlip = "tied"; // set player two flip to tied which is not a valid flip
     }
@@ -409,52 +409,43 @@ async function compareCoinFlip() {
     currentGameState.coinTossOver = true; // set coin toss over to true so that the game can continue
     console.log("Coin toss is over. Player One Flip: " + currentGameState.playerOneFlip + " - Player Two Flip: " + currentGameState.playerTwoFlip);
 
-    if (currentGameState.playerOneFlip === currentGameState.coinFlip)
-    {
+    if(currentGameState.playerOneFlip === currentGameState.coinFlip){
         currentGameState.currentPlayer = "O";
         currentGameState.isPlayerOne[1] = "O"; // set player one to O
         currentGameState.isPlayerTwo[1] = "X"; // set player two to X
     } 
-    else if (currentGameState.playerTwoFlip === currentGameState.coinFlip) {
+    else if(currentGameState.playerTwoFlip === currentGameState.coinFlip){
         currentGameState.currentPlayer = "O";
         currentGameState.isPlayerTwo[1] = "X"; // set player two to X
         currentGameState.isPlayerOne[1] = "O"; // set player one to O
     }
-
-
-    setUniversalButtonContent("Start");
-    await pollSaveDuringGame(); 
+    
+    setUniversalButtonContent("Clear");
     await safeSaveGameState(currentGameState); // save the game state to the server
-    prepareGameTurnLogicTick(); // ---------------- *HAS* ------------- LOCAL AND/OR FILE UPDATE
+    await pollSaveDuringGame();
+    // prepareGameTurnLogicTick(); 
+    initalizeCellsUI();
     universalButton.addEventListener("click", universalButtonToggle); // should not be null
-
 }
 
-async function pollCoinFlipResult() {
+async function pollCoinFlipResult(){
     coinSync = setInterval(async () => {
         const response = await fetch ("http://127.0.0.1:8080/State") // listen on the server not the browser port
         const jData = await response.json();
         currentGameState = jData; // copy the server token to the local token
 
-        // if (currentGameState.playerOneFlip === currentGameState.playerTwoFlip && currentGameState.playerOneFlip !== null) {
-        //     CoinFlip(); // both players have the same coin flip, so we will flip again
-        //     currentGameState.playerOneFlip = null;
-        //     currentGameState.playerTwoFlip = null;
-        //     await safeSaveGameState(currentGameState); // save game state to server
-        // } else if (currentGameState.coinTossOver) {
-        //     // Both players have flipped, no need to flip again
-        //     setUniversalButtonContent("Start");
-        //     await pollSaveDuringGame(); 
-        //     clearInterval(coinSync);
-        // }
-        if (currentGameState.playerOneFlip === currentGameState.playerTwoFlip && currentGameState.playerOneFlip !== null) {
+        if(currentGameState.playerOneFlip === currentGameState.playerTwoFlip && currentGameState.playerOneFlip !== null){
             currentGameState.playerOneFlip = currentGameState.coinFlip; // set player one flip to the coin flip
             currentGameState.playerTwoFlip = "tied"; // set player two flip to tied which is not a valid flip
             await safeSaveGameState(currentGameState); // save game state to server
-        } else if (currentGameState.coinTossOver) {
+        }
+        else if(currentGameState.coinTossOver){
             // Both players have flipped, no need to flip again
-            setUniversalButtonContent("Start");
+            setUniversalButtonContent("Clear");
             await pollSaveDuringGame(); 
+            // prepareGameTurnLogicTick(); 
+            initalizeCellsUI();
+            universalButton.addEventListener("click", universalButtonToggle); // should not be null
             clearInterval(coinSync);
         }
     }, 500);
@@ -470,12 +461,10 @@ async function pollCoinFlipResult() {
  * if no win condition returnvalue is init to zero so binary false 
  * @sideEffects - If isComputer is false and a win is found, modifies cell text color to red.
  */
-
-async function checkForThreeInARow(thisOptions) {
-
+async function checkForFourInARow(thisOptions){
     let returnValue = 0;
 
-    for(let i = 0; i < winConditions.length/*8*/; i++) {
+    for(let i = 0; i < winConditions.length/*8*/; i++){
 
         // so if condition is winConditions at index [0] it would be [0,1,2]
         // lets just say the options are all still empty " "
@@ -487,10 +476,12 @@ async function checkForThreeInARow(thisOptions) {
         const cellA = thisOptions[condition[0]];
         const cellB = thisOptions[condition[1]];
         const cellC = thisOptions[condition[2]];
+        const cellD = thisOptions[condition[3]]; // added for 4 in a row
 
-        if (cellA == cellB && cellB == cellC ) {
-
-            if (cellA == "" || cellB == "" || cellC == "") { continue; } // double final check
+        if(cellA == cellB && cellB == cellC && cellC == cellD && cellA !== ""){
+            if(cellA == "" || cellB == "" || cellC == "" || cellD == ""){
+                continue;  // double final check
+            }
             changeWinnerColors(condition); // change the color of the winning cells to red
             currentGameState.winCondition = condition; // set the win condition to the current condition
             currentGameState.winner = currentGameState.currentPlayer; // set the winner in the current game state
@@ -499,7 +490,6 @@ async function checkForThreeInARow(thisOptions) {
             returnValue = 1;
         } 
     }
-
     return returnValue;
 }
 
@@ -511,44 +501,37 @@ async function checkForThreeInARow(thisOptions) {
  * if no win but the board is full, declares a draw
  * otherwise calls changePlayer to continue the game
  */
-
-async function checkWinner () {
+async function checkWinner(){
     let roundWon = false;
-    roundWon = await checkForThreeInARow(currentGameState.board);
+    roundWon = await checkForFourInARow(currentGameState.board);
 
-    if (roundWon) {
-
-        clearInterval(syncInterval); // clear the interval to stop updating the local status
-        clearInterval(fromFileInterval); 
-        clearInterval(toFileInterval); 
+    if(roundWon){
         displayWinnerMessage(); // call the winner message function to display the winner message
         running = false;
 
         // Assign "O" to winner and "X" to loser
-        if (playerOne && (currentGameState.winner !== "O")) {
+        if(playerOne && (currentGameState.winner !== "O")){
             currentGameState.isPlayerOne[1] = "O";
             currentGameState.isPlayerTwo[1] = "X";
             currentGameState.winner = "O"; // set the winner to O
-        } else if (playerTwo && (currentGameState.winner !== "O")) {
+        }
+        else if (playerTwo && (currentGameState.winner !== "O")){
             currentGameState.isPlayerTwo[1] = "O";
             currentGameState.isPlayerOne[1] = "X";
             currentGameState.winner = "O"; // set the winner to O
         }
-
-        await updateFileGameStateWithFilePicker(); // update the file game state with the file picker
+        await safeSaveGameState(currentGameState); // save the game state to the server
     }
-    else if (!currentGameState.board.includes("")) {
-
+    else if(!currentGameState.board.includes("")){
         displayDrawMessage(); // call the displayDrawMessage function to display the draw message
-
         running = false;
-        await updateFileGameStateWithFilePicker(); // update the file game state with the file picker
-
+        await safeSaveGameState(currentGameState); // save the game state to the server
     }
-    else if ((playerOne && currentGameState.isPlayerOne[1] === currentGameState.currentPlayer) ||
-        (playerTwo && currentGameState.isPlayerTwo[1] === currentGameState.currentPlayer)) {
+    else if((playerOne && currentGameState.isPlayerOne[1] === currentGameState.currentPlayer) || (playerTwo && currentGameState.isPlayerTwo[1] === currentGameState.currentPlayer)){
         await changePlayer();
     }
+    // await prepareGameTurnLogicTick();
+    // initalizeCellsUI();
 }
 
 
@@ -561,19 +544,21 @@ async function checkWinner () {
  * @sideEffects - updates global game state (currentPlayer), calls UI update functions,
  * and may trigger the computer's move.
  */
+async function changePlayer(){
 
-async function changePlayer() {
-
-    playerHasMoved = false; // reset playerHasMoved to false so that the player can move again
-    if (currentGameState.currentPlayer === "O") {
+    // playerHasMoved = false; // reset playerHasMoved to false so that the player can move again
+    if(currentGameState.currentPlayer === "O"){
         currentGameState.currentPlayer = "X";
-    } else {
+    } 
+    else{
         currentGameState.currentPlayer = "O";
     }
 
+    // await prepareGameTurnLogicTick();
+    // initalizeCellsUI();
     await safeSaveGameState(currentGameState); // save the game state to the server
-    playerHasMoved = false; 
-    await prepareGameTurnLogicTick();
+    // playerHasMoved = false; 
+    
 }
 
 
@@ -581,27 +566,16 @@ async function changePlayer() {
  * If the player has not moved yet, this function will prepare the game turn logic tick that updates the file
  * The additonal player logic is to update the local game state with the file picker and update the board from the current game state 
  */
+async function prepareGameTurnLogicTick(){
+    initalizeCellsUI();  // Adds event listener to each cell
 
-async function prepareGameTurnLogicTick() {
-
-    // 
-    if (!playerHasMoved &&
-        ((playerOne && currentGameState.isPlayerOne[1] === currentGameState.currentPlayer) ||
-        (playerTwo && currentGameState.isPlayerTwo[1] === currentGameState.currentPlayer))) {
-
-        updateBoardFromGameState(); // update the board from the current game state --------------------- NO LOCAL OR FILE UPDATE
-
+    if(!playerHasMoved && ((playerOne && currentGameState.isPlayerOne[1] === currentGameState.currentPlayer) || (playerTwo && currentGameState.isPlayerTwo[1] === currentGameState.currentPlayer))){
+        // updateBoardFromGameState(); // update the board from the current game state 
         playerHasMoved = true;
-
-    } else if (playerHasMoved === false) { // if the player has not moved yet, we will update the local game state with the file picker, so they are not updating the game state while the player is making a move
-
-        // fromFileInterval = setInterval(async () => {
-            // await updateLocalGameStateWithFilePicker();
-            updateBoardFromGameState();
-        // }, 250);
     }
-
-    initalizeCellsUI(); // reinitialize the cells with the event listener for cellClicked --------------------- NO LOCAL OR FILE UPDATE
+    // else if (playerHasMoved === false){ // if the player has not moved yet, not updating the game state while the player is making a move
+        
+    // }
 }
 
 
@@ -610,74 +584,23 @@ async function prepareGameTurnLogicTick() {
  * also resets the cells and status text
  * as well as updating the file game state with the file picker and changing running to false 
  */
-
-async function restartGame () {
+async function restartGame(){
     running = false; // set running to false so that the game is not running anymore
 
     // this is here just in case some one end the game early 
-    clearInterval(syncInterval);
-    clearInterval(toFileInterval);
-    clearInterval(fromFileInterval);
+    clearInterval(syncSave); // clear the interval to stop and to stop status context updates
     displayCurrentPlayerForStatusText();
     restartStatusAndCells();
 
     //reinitialize the game state to the file system
-    await updateFileGameStateWithFilePicker(); 
+    await safeSaveGameState(currentGameState);
+    await getFetch_NewGame();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /**
  * tests connection to the server by fetching the servers root URL
  */
-async function initGameState_Fetch() 
-{
+async function initGameState_Fetch(){
     await fetch("http://127.0.0.1:8080")
     .then(response => response.text())
     .then(data => {
@@ -698,7 +621,14 @@ async function initGameState_Fetch()
  * @param {Object} state - The game state object to be sent to the server
  * @returns {void} Resolves once the POST is completed and the lock is cleared
  */
-async function safeSaveGameState(state) {
+async function safeSaveGameState(state){
+
+    if (currentGameState.currentPlayer === "O" || currentGameState.currentPlayer === "X"){
+        console.log("Saving game state for the player:")
+    } else {
+        console.log(currentGameState);
+    }
+
     isWriting = true;                           // lock
     await sleep(550);                           // give the GET interval a chance to skip
     await post_GameState(state);                // POST
@@ -706,55 +636,60 @@ async function safeSaveGameState(state) {
 }
 
 /**
- * assign Player One and Player Two depending on the order of connection to the server
- * @returns {void} - displays a start message to the user
+ * UPDATED ON 07.19.2025
+ * RegisterPlayer did not exist as a function; using safeSaveGameState, which -->
+ * --> looks like it should do the same exact thing.
+ * ORIGINAL FUNCTION: Assign players depending on the order of connection to the server
  */
-// async function assignPlayerID() {
-//     if (firstGame) {
-//         // check if the current game state has player one or player two assigned
-//         if (!currentGameState.isPlayerOne[0]) {
-//             currentGameState.isPlayerOne[0] = true;
-//             playerOne = true; 
-//             // await RegisterPlayer(currentGameState); // post the game state to the server
-//             console.log("playerOne set to " + currentGameState.isPlayerOne[0]);
-
-//         } else if (!currentGameState.isPlayerTwo[0]) {
-//             currentGameState.isPlayerTwo[0] = true;
-//             playerTwo = true; 
-//             // await RegisterPlayer(currentGameState); // post the game state to the server/
-//             console.log("playerTwo set to " + currentGameState.isPlayerTwo[0]);
-
-//         } else {
-//             alert("Both players are already assigned. Please refresh the page to start a new game.");
-//             // window.location.reload(); // close the window if both players are already assigned
-//             return;
+//  async function assignPlayerID(){
+//     if(firstGame){
+//         // Ensure Player One is initialized properly and doesn't crash the program
+//         if(!Array.isArray(currentGameState.isPlayerOne)){
+//             currentGameState.isPlayerOne = [false, ""];
+//         }
+//         // Ensure Player Two is initialized properly and doesn't crash the program
+//         if(!Array.isArray(currentGameState.isPlayerTwo)){
+//             currentGameState.isPlayerTwo = [false, ""];
 //         }
 
-//         await RegisterPlayer(currentGameState); // post the game state to the server
-
+//         if(!currentGameState.isPlayerOne[0]){
+//             currentGameState.isPlayerOne[0] = true;  // Initializes Player One
+//             playerOne = true;
+//             console.log("Player One has been set to: " + currentGameState.isPlayerOne[0]);
+//         }
+//         else if(!currentGameState.isPlayerTwo[0]){
+//             currentGameState.isPlayerTwo[0] = true;
+//             playerTwo = true;
+//             console.log("Player Two has been set to: " + currentGameState.isPlayerTwo[0]);
+//         }
+//         else{
+//             alert("Both players have already been assigned. Please start a new game to make a new player assignment.");
+//             return;
+//         }
+//         await safeSaveGameState(currentGameState);
 //         firstGame = false;
 //     }
-// }
+//  }
 
 /**
  * assign Player One and Player Two depending on the order of connection to the server
  */
-
-async function getPlayerIdFetch() {
+async function getPlayerIdFetch(){
     const response = await fetch("http://127.0.0.1:8080/register", {
         method: "POST"
     });
     const data = await response.json();
-        if (data.player === 'one') {
+    if(data.player === 'one'){
         playerOne = true;
         currentGameState.isPlayerOne[0] = true; // set player one to true
-    } else if (data.player === 'two') {
+    }
+    else if(data.player === 'two'){
         playerTwo = true;
         currentGameState.isPlayerTwo[0] = true; // set player two to true
-    } else {
+    }
+    else{
         alert("Both players already assigned.");
     }
-
     firstGame = false; // set first game to false so that the game can continue
 }
 
@@ -764,9 +699,7 @@ async function getPlayerIdFetch() {
  * @param {Object} state - The game state object to be sent to the server.
  * @returns {void} Resolves once the POST is completed and the lock is cleared.
  */
-async function post_GameState(state) 
-{
-    
+async function post_GameState(state){ 
     fetch("http://127.0.0.1:8080/State", { // listen on the server not the browser port
         method : "POST", 
         headers:{
@@ -785,40 +718,25 @@ async function post_GameState(state)
 }
 
 /**
- * Registers a player with the server by sending the initial game state.
- * init the server with information about the player as they are connected to the server!
- * @param {Object} state - The game state object to be sent to the server.
- * @returns {void} Resolves once the POST is completed and the lock is cleared.
- */
-// async function RegisterPlayer(state) 
-// {
-//     fetch("http://127.0.0.1:8080/InitState", { // listen on the server not the browser port
-//         method : "POST", 
-//         headers:{
-//             'content-type': 'application/json',
-//             'Accept': 'application/json'
-//         },
-//         body: JSON.stringify(state, null, 2) // extra params to format the JSON data
-//     })
-//     .then(response => response.text())
-//     .then(data => {
-//         console.log("Server message:", data); 
-//     })
-//     .catch(error => {
-//         console.error("Fetch failed:", error);  
-//     });
-// }
-
-/**
  * Fetches the current game state from the server.
  * This function retrieves the game state from the server and updates the local game state.
  * can be called periodically within an inteval to update local game state
  */
-async function getFetch_GameState()
-{
-    console.log("fetching game state from server");
-
+async function getFetch_GameState(){
+    // console.log("fetching game state from server");
     const response = await fetch ("http://127.0.0.1:8080/State") // listen on the server not the browser port
+    const jData = await response.json();
+    currentGameState = jData; // copy the server token to the local token
+}
+
+
+/**
+ * Fetches the current game state from the server.
+ * the server response will also reset the server game state for starting a new game and return this state
+ */
+async function getFetch_NewGame(){
+    // console.log("fetching game state from server");
+    const response = await fetch ("http://127.0.0.1:8080/NewGame") // listen on the server not the browser port
     const jData = await response.json();
     currentGameState = jData; // copy the server token to the local token
 }
@@ -828,6 +746,6 @@ async function getFetch_GameState()
  * @param {number} ms - the number of milli seconds to delay
  * @returns {Promise} 
  */
-function sleep(ms) {
+function sleep(ms){
     return new Promise(resolve =>setTimeout(resolve, ms)); // https://youtu.be/pw_abLxr4PI?si=Tlfw1HBU92o0wX3B
 }
