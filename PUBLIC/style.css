@@ -1,0 +1,225 @@
+.jersey-10-regular {
+    
+  font-family: "Jersey 10", sans-serif;
+  font-weight: 400;
+  font-style:normal;
+  line-height: 10px;
+}
+
+#ConnectionScreen {
+
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+    align-items: center;
+
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    background: linear-gradient(to right, hsl(215, 89%, 14%), hsl(204, 2%, 55%)); 
+    border: 5px solid hsla(0, 0%, 100%, 0.562);
+    border-radius: 20px;
+    outline: 5px solid black;
+    outline-offset: 0px;
+    
+    padding: 40px;
+    z-index: 100;
+
+    font-family: "Jersey 10", sans-serif;
+    color: white;
+    text-align: center;
+
+    animation: flash 2s infinite;
+}
+
+#ConnectionScreen h1 {
+    animation: flash 2s infinite;
+}
+
+@keyframes flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+
+
+
+body {
+
+    background-color: #1f1e1d;
+    margin: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+
+/* selector for gameContainer class */
+.gameContainer {
+
+    background: linear-gradient(to left, hsl(215, 89%, 14%),  hsl(204, 2%, 55%)) ;
+    padding: 50px;
+    box-shadow: 10px 10px 5px hsl(0, 0%, 0%, .5);
+    min-width: 350px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+}
+
+/* selector for button-row-container class */
+.button-row-container {
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 35px;
+    padding-bottom: 35px;
+
+}
+
+#titleH1 {
+
+    font-family: "Jersey 10", sans-serif;
+    font-size: 3rem;
+    font-weight: bolder;
+    display: inline-block;
+    
+    background-color: hsl(0, 0%, 0%);
+    color: white;
+    border: 5px solid hsla(0, 0%, 100%, 0.562);
+    border-radius: 20px;
+    outline: 5px solid black;
+    outline-offset: 0px;
+    
+    padding: 20px 150px;
+    text-align: center;
+
+    white-space: nowrap;
+
+}
+
+/* selector for cell container id  */
+#cellContainer {
+
+    display: grid;
+    grid-template-columns: repeat(4, auto);
+    grid-template-rows: repeat(4, auto);
+    width: auto;
+    margin: auto;
+    padding: 50px 50px;
+
+    visibility: hidden;
+}
+
+#statusText {
+
+    font-family: "Jersey 10", sans-serif;
+    font-size: 2rem;
+    display:flex;
+    align-items: center;
+    background-color: hsl(0, 0%, 0%);
+    color: white;
+
+    border:5px solid hsla(0, 0%, 100%, 0.561);
+    border-radius: 20px;
+    outline: 5px solid black;
+    outline-offset: 0px;
+
+    padding: 20px;
+}
+
+/* selector for cell class */
+.cell {
+
+    width:90px;
+    height:90px;
+    border: 3px solid black;
+    box-shadow: 0 0 0 0px;
+    line-height: 75px;
+
+    font-family: "Jersey 10", sans-serif;
+    font-size: 100px;
+    color: black;
+    text-align: center;
+    cursor: pointer;
+}
+
+.cell:hover {
+    background-color: rgb(51, 51, 44);
+}
+
+button[type="button"] {
+
+    font-family: "Jersey 10", sans-serif;
+    padding: 10px 30px;
+    font-weight: normal;
+    font-size: 1.5rem;
+
+    background-color: hsl(0, 0%, 0%);
+    color: white;
+
+    border: 5px solid hsla(0, 0%, 100%, 0.562);
+    border-radius: 20px;
+    outline: 5px solid black;
+    outline-offset: 0px;
+    
+    cursor:pointer;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    white-space: nowrap;
+
+}
+
+button[type="button"]:hover {
+
+    background-color: hsl(204, 2%, 55%);
+
+}
+
+.tooltip {
+  position: relative;
+}
+
+.tooltiptext {
+  --scale: 0;
+  transform: scale(var(--scale));
+  /* transform-origin: top center; */
+  transition: 150ms ;
+  
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  translate: -50% 10px;
+
+  visibility: hidden;
+  background-color: hsl(110, 64%, 74%);
+  color: black;
+  padding: 0.5rem;
+  border-radius: 20px;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.tooltip:hover .tooltiptext {
+  --scale: 1;
+  visibility: visible;
+}
+
+/* possoble types
+text
+button
+checkbox
+radio
+password
+submit
+reset
+email
+number
+date
+file
+hidden */
