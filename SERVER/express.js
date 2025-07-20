@@ -12,18 +12,19 @@ app.use(cors()); // enable CORS for all routes
 const PORT = process.env.PORT || 8080;
 
 let gameState = {
-    board: Array(16).fill(""),
-    currentPlayer: "",
-    playerOneFlip: null,
-    playerTwoFlip: null,
-    coinFlip: "Tails",
-    isPlayerOne: [false, ""], // true if player one is connected
-    isPlayerTwo: [false, ""], // true if player two is connected
-    winCondition: null,
-    winner: null,
-    coinTossOver: false, 
-    forfeit: false // true if a player has forfeited the game
-};
+        board: Array(16).fill(""),
+        currentPlayer: "",
+        playerOneFlip: null,
+        playerTwoFlip: null,
+        coinFlip: "Tails", // Default coin flip value
+        isPlayerOne: [false, "", false], // [connected, "X" or "O", canMove]
+        isPlayerTwo: [false, "", false], // [connected, "X" or "O", canMove]
+        winCondition: null,
+        winner: null, 
+        coinTossOver: false,
+        forfeit: false, // Reset forfeit state
+        bWriteLock: false
+    };
 
 // const gameSavePath = path.join(__dirname, '../data/db.json');
 app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from the 'public' directory
@@ -69,37 +70,53 @@ app.post("/State", (request, response) => {
     // fs.writeFileSync(gameSavePath, JSON.stringify(request.body, null, 2)); // Write the request body to state.json
     // console.log(`PINGED from ${request.body.user};`);
 	// response.send(`PINGED from ${request.body.user};`);
+    if (!gameState.bWriteLock) {
+        gameState.bWriteLock = true; // Lock the game state to prevent concurrent writes
+        console.log("Game state write lock is now ON.");
+    }else if (gameState.bWriteLock) {
+        console.log("Game state write lock is already ON, skipping registration.");
+        response.json({error: 'wait'});
+        return;
+    } 
 
     gameState = request.body; // Update the game state with the request body
+    gameState.bWriteLock = false; // Unlock the game state after updating
+    console.log("Game state write lock is now OFF.");
     response.send("Game State has been saved."); // Send a response indicating the game state has been saved
     console.log("current game state from client that has been updated to server");
     console.log(request.body);
 })
 
-// // Initialize the game state player id with the request body
-// app.post("/InitState", (request, response) => {
-//     // fs.writeFileSync(gameSavePath, JSON.stringify(request.body, null, 2)); // Write the request body to state.json
-// 	// console.log("PlayerOne: " + request.body.isPlayerOne[0] + " - PlayerTwo: " + request.body.isPlayerTwo[0]);
-// 	// response.send(`init loaded new player`);
-
-//     gameState = request.body; // Update the game state with the request body
-//     console.log("PlayerOne: " + request.body.isPlayerOne[0] + " - PlayerTwo: " + request.body.isPlayerTwo[0]);
-//     response.send(`init loaded new player, Game State has been saved.`);
-    
-// })
-
 app.post("/register", (request, response) => {
+    if (!gameState.bWriteLock) {
+        gameState.bWriteLock = true; // Lock the game state to prevent concurrent writes
+        console.log("Game state write lock is now ON.");
+    }else if (gameState.bWriteLock) {
+        console.log("Game state write lock is already ON, skipping registration.");
+        response.json({error: 'wait'});
+        return;
+    } 
+
     if (!gameState.isPlayerOne[0]) {
         gameState.isPlayerOne[0] = true; // Set player one as connected
-        response.json({ player: 'one' });
+        gameState.bWriteLock = false;
+        console.log("Game state write lock is now OFF.");
         console.log("Player One registered : " + gameState.isPlayerOne[0]);
+        return response.json({ player: 'one' });
+
     } else if (!gameState.isPlayerTwo[0]) {
         gameState.isPlayerTwo[0] = true; // Set player two as connected
-        response.json({ player: 'two' });
+        gameState.bWriteLock = false;
+        console.log("Game state write lock is now OFF.");
         console.log("Player Two registered : " + gameState.isPlayerTwo[0]);
+        return response.json({ player: 'two' });
+
     }
 
     console.log("Player One: " + gameState.isPlayerOne[0] + " - Player Two: " + gameState.isPlayerTwo[0]);
+    gameState.bWriteLock = false; 
+    console.log("Game state write lock is now OFF.");
+    console.log("both players already registered on client end.")
 })
 
 
@@ -125,12 +142,13 @@ function resetGameSave() {
         playerOneFlip: null,
         playerTwoFlip: null,
         coinFlip: "Tails", // Default coin flip value
-        isPlayerOne: [false, ""],
-        isPlayerTwo: [false, ""],
+        isPlayerOne: [false, "", false], // [connected, "X" or "O", canMove]
+        isPlayerTwo: [false, "", false], // [connected, "X" or "O", canMove]
         winCondition: null,
         winner: null, 
         coinTossOver: false,
-        forfeit: false // Reset forfeit state
+        forfeit: false, // Reset forfeit state
+        bWriteLock: false
     };
 
     console.log("Game state has been reset from null state.");
