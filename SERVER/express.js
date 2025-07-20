@@ -11,6 +11,23 @@ app.use(express.json());
 app.use(cors()); // enable CORS for all routes
 const PORT = process.env.PORT || 8080;
 
+
+/**
+ * Represents the current state of the game.
+ * @typedef {Object} GameState
+ * @property {string[]} board - Array of 16 elements representing the 4x4 game board. Each entry is "X", "O", or "".
+ * @property {string} currentPlayer - The ID of the current player ("X" or "O").
+ * @property {number} playerOneFlip - Result of Player One's coin flip heads or tails or null if not yet flipped.
+ * @property {number} playerTwoFlip - Result of Player Two's coin flip heads or tails or null if not yet flipped.
+ * @property {string} coinFlip - Final coin flip outcome, default "Tails".
+ * @property {[boolean, string]} isPlayerOne - Player One connection state: [connected, "X"|"O" or "" if unassigned].
+ * @property {[boolean, string]} isPlayerTwo - Player Two connection state: [connected, "X"|"O" or "" if unassigned].
+ * @property {number[]} winCondition - Winning indices (array of 4 board positions) or null if no winner.
+ * @property {string} winner - The winner ("X" or "O"), or null if no winner yet.
+ * @property {boolean} coinTossOver - Indicates if the coin toss phase has completed.
+ * @property {boolean} forfeit - Indicates if the game was forfeited.
+ * @property {boolean} bWriteLock - Lock flag to prevent overlapping state writes.
+ */
 let gameState = {
         board: Array(16).fill(""),
         currentPlayer: "",
@@ -29,7 +46,9 @@ let gameState = {
 // const gameSavePath = path.join(__dirname, '../data/db.json');
 app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from the 'public' directory
 
-
+/**
+ * Starts the server and listens on the specified port.
+ */
 app.listen(PORT, () => {
     console.log(`Server is running on ${PORT}`);
     console.log(gameState);
@@ -55,11 +74,9 @@ app.get("/State", (request, response) => {
     response.json(gameState); // Send the game state as a JSON response
 })
 
-app.get("/NewGame", (request, response) => {
-    ReNewGameSave(); // Reset the game state to its initial values
-    response.json(gameState); // Send the new game state as a JSON response
-});
-
+/**
+ * Updates the game state on the server.
+ */
 app.post("/State", (request, response) => {
 
     if (!gameState.bWriteLock) {
@@ -112,7 +129,9 @@ app.post("/register", (request, response) => {
 })
 
 
-// Function to reset the game state to its initial values
+/**
+ * Function to reset the game state to its initial values
+ */
 function resetGameSave() {
 
     gameState = {
@@ -133,17 +152,27 @@ function resetGameSave() {
     console.log("Game state has been reset from null state.");
 }
 
+/**
+ * Function to reset the game state to its initial values
+ */
 function ReNewGameSave() {
     // Reset the game state to its initial values
     gameState.board = Array(16).fill(""); // Reset the board to empty
     console.log("Game BOARD has been emptied.");
 }
 
+/**
+ * function used to handle server shutdown
+ */
 process.on('SIGINT', () => {
     resetGameSave();
     process.exit();
 });
 
+/**
+ * Function to simulate a coin flip and update the game state
+ * The coin flip is determined by generating a random value between 0 and 1.
+ */
 function coinFlip() {
     const randomValue = Math.random(); // Generate a random value between 0 and 1
     if (randomValue <.5) {gameState.coinFlip = "Heads";} // Assign "Heads" if the random value is less than 0.5
