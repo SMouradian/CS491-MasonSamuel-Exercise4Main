@@ -185,6 +185,8 @@ async function initGameUI(){
 
     if(!running){
         running = true;
+        currentGameState.currentPlayer = "O"; // O goes first
+        await safeSaveGameState(currentGameState);
         changeBoardVisibility(); // show the game board
     }
 
@@ -192,8 +194,7 @@ async function initGameUI(){
     if(currentGameState.isPlayerOne[1] !== "" && currentGameState.isPlayerTwo[1] !== ""){
         // initGameState_Fetch(); // fetch the game state from the server to init currentGameState
         currentGameState.winner = null; // reset the winner
-
-        await safeSaveGameState(); 
+        await safeSaveGameState(currentGameState); 
     } 
 }
 
@@ -224,9 +225,7 @@ function toggleCellsListener() {
  */
 async function cellClicked(event){
     const cellIndex = event.target.getAttribute("cellIndex"); // this refers to what ever cell is clicked on screen by user
-
     console.log("Cell clicked at index: " + cellIndex);
-    // clearInterval(syncSave);
 
     if(currentGameState.board[cellIndex] != "" || !running){
         return;
@@ -303,7 +302,7 @@ function displayStartMessage(){
  * display the current player whos turn it is to move 
  * current player will display within the html element with statustext id 
  */
-function displayCurrentPlayerForStatusText(){
+function displayLastWinnerMessage(){
     statusText.textContent = `${currentGameState.currentPlayer} won the last game! Press start to play again!`;
 }
 
@@ -346,7 +345,7 @@ function restartStatusAndCells(){
     cells.forEach(cell => cell.textContent = "");
 
     if(currentGameState.forfeit){
-        currentGameState.winner = "O";
+        // currentGameState.winner = "O";
         statusText.textContent = `No winner! Press Start to play again!`;
         currentGameState.forfeit = true;
     }
@@ -431,7 +430,7 @@ async function compareCoinFlip(){
     console.log("Coin toss is over. Player One Flip: " + currentGameState.playerOneFlip + " - Player Two Flip: " + currentGameState.playerTwoFlip);
 
     if(currentGameState.playerOneFlip === currentGameState.coinFlip){
-        currentGameState.currentPlayer = "O"; // O goes first
+        // currentGameState.currentPlayer = "O"; // O goes first
         currentGameState.isPlayerOne[1] = "O"; // set player one to O
         currentGameState.isPlayerTwo[1] = "X"; // set player two to X
 
@@ -439,7 +438,7 @@ async function compareCoinFlip(){
         currentGameState.isPlayerOne[2] = true; // set player one to able to move
     } 
     else if(currentGameState.playerTwoFlip === currentGameState.coinFlip){
-        currentGameState.currentPlayer = "O"; // O goes first
+        // currentGameState.currentPlayer = "O"; // O goes first
         currentGameState.isPlayerTwo[1] = "X"; // set player two to X
         currentGameState.isPlayerOne[1] = "O"; // set player one to O
 
@@ -513,6 +512,7 @@ async function checkForFourInARow(thisOptions){
             returnValue = 1;
         } 
     }
+
     return returnValue;
 }
 
@@ -529,19 +529,16 @@ async function checkWinner(){
     roundWon = await checkForFourInARow(currentGameState.board);
 
     if(roundWon){
-        displayWinnerMessage(); // call the winner message function to display the winner message
         running = false;
 
         // Assign "O" to winner and "X" to loser
         if(playerOne && (currentGameState.winner !== "O")){
             currentGameState.isPlayerOne[1] = "O";
             currentGameState.isPlayerTwo[1] = "X";
-            currentGameState.winner = "O"; // set the winner to O
         }
         else if (playerTwo && (currentGameState.winner !== "O")){
             currentGameState.isPlayerTwo[1] = "O";
             currentGameState.isPlayerOne[1] = "X";
-            currentGameState.winner = "O"; // set the winner to O
         }
         await safeSaveGameState(currentGameState); // save the game state to the server
     }
@@ -558,31 +555,13 @@ async function checkWinner(){
 
 
 /**
- * when this is called if the gamne is running and the handicap has not been use yet...
- * it will call the init cells again and that player will get a secoind move 
  * is called after a move is made by a player and toggles the current player between "x" and "O"
- * if the current player is "O", the function calls the computer selection function
- * at the end it updates the current player to the statusText tect content
- * @sideEffects - updates global game state (currentPlayer), calls UI update functions,
- * and may trigger the computer's move.
+ * @sideEffects - updates global game state (currentPlayer)
  */
 async function changePlayer(){
 
-    // playerHasMoved = false; // reset playerHasMoved to false so that the player can move again
-    // if(currentGameState.currentPlayer === "O"){
-    //     currentGameState.currentPlayer = "X";
-    // } 
-    // else{
-    //     currentGameState.currentPlayer = "O";
-    // }
     currentGameState.currentPlayer = currentGameState.currentPlayer === "O" ? "X" : "O";
-
-
-    // await prepareGameTurnLogicTick();
-    // toggleCellsListener();
     await safeSaveGameState(currentGameState); // save the game state to the server
-    // playerHasMoved = false; 
-    
 }
 
 
@@ -595,10 +574,12 @@ async function restartGame(){
     running = false; // set running to false so that the game is not running anymore
 
     // this is here just in case some one end the game early 
+    console.log("sync Save Value: ", syncSave);
     if (syncSave){
         clearInterval(syncSave); // clear the interval to stop and to stop status context updates
     }
-    displayCurrentPlayerForStatusText();
+
+    displayLastWinnerMessage();
     restartStatusAndCells();
     toggleCellsListener(); // make cells unclickable
 
