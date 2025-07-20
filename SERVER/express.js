@@ -1,4 +1,4 @@
-
+/** Mason Haines - Samuel Mouradian 7/17/2025 */
 
 const express = require('express');
 const fs = require('fs');
@@ -12,17 +12,19 @@ app.use(cors()); // enable CORS for all routes
 const PORT = process.env.PORT || 8080;
 
 let gameState = {
-    board: Array(16).fill(""),
-    currentPlayer: "",
-    playerOneFlip: null,
-    playerTwoFlip: null,
-    coinFlip: "Tails",
-    isPlayerOne: [false, ""], // true if player one is connected
-    isPlayerTwo: [false, ""], // true if player two is connected
-    winCondition: null,
-    winner: null,
-    coinTossOver: false
-};
+        board: Array(16).fill(""),
+        currentPlayer: "",
+        playerOneFlip: null,
+        playerTwoFlip: null,
+        coinFlip: "Tails", // Default coin flip value
+        isPlayerOne: [false, ""], // [connected, "X" or "O"]
+        isPlayerTwo: [false, ""], // [connected, "X" or "O"]
+        winCondition: null,
+        winner: null, 
+        coinTossOver: false,
+        forfeit: false, // Reset forfeit state
+        bWriteLock: false
+    };
 
 // const gameSavePath = path.join(__dirname, '../data/db.json');
 app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from the 'public' directory
@@ -49,14 +51,8 @@ app.get("/", (request, response) => {
  // Request to server from client for some data 
  // app.get("URL",(req,res)=>{})
 app.get("/State", (request, response) => {
-    // const jData = fs.readFileSync(gameSavePath); // Read the gameState.json file
-    // const stateData = JSON.parse(jData); // Parse the JSON data to js object 
-    // response.json(stateData);
-    // console.log("GET Request Successfull!");
-    
-    // console.log("GET Request Successfull!");
+
     response.json(gameState); // Send the game state as a JSON response
-	
 })
 
 app.get("/NewGame", (request, response) => {
@@ -65,58 +61,59 @@ app.get("/NewGame", (request, response) => {
 });
 
 app.post("/State", (request, response) => {
-    // fs.writeFileSync(gameSavePath, JSON.stringify(request.body, null, 2)); // Write the request body to state.json
-    // console.log(`PINGED from ${request.body.user};`);
-	// response.send(`PINGED from ${request.body.user};`);
+
+    if (!gameState.bWriteLock) {
+        gameState.bWriteLock = true; // Lock the game state to prevent concurrent writes
+        console.log("Game state write lock is now ON.");
+    }else if (gameState.bWriteLock) {
+        console.log("Game state write lock is already ON, skipping registration.");
+        response.json({error: 'wait'});
+        return;
+    } 
 
     gameState = request.body; // Update the game state with the request body
+    gameState.bWriteLock = false; // Unlock the game state after updating
+    console.log("Game state write lock is now OFF.");
     response.send("Game State has been saved."); // Send a response indicating the game state has been saved
     console.log("current game state from client that has been updated to server");
     console.log(request.body);
 })
 
-// // Initialize the game state player id with the request body
-// app.post("/InitState", (request, response) => {
-//     // fs.writeFileSync(gameSavePath, JSON.stringify(request.body, null, 2)); // Write the request body to state.json
-// 	// console.log("PlayerOne: " + request.body.isPlayerOne[0] + " - PlayerTwo: " + request.body.isPlayerTwo[0]);
-// 	// response.send(`init loaded new player`);
-
-//     gameState = request.body; // Update the game state with the request body
-//     console.log("PlayerOne: " + request.body.isPlayerOne[0] + " - PlayerTwo: " + request.body.isPlayerTwo[0]);
-//     response.send(`init loaded new player, Game State has been saved.`);
-    
-// })
-
 app.post("/register", (request, response) => {
+    if (!gameState.bWriteLock) {
+        gameState.bWriteLock = true; // Lock the game state to prevent concurrent writes
+        console.log("Game state write lock is now ON.");
+    }else if (gameState.bWriteLock) {
+        console.log("Game state write lock is already ON, skipping registration.");
+        response.json({error: 'wait'});
+        return;
+    } 
+
     if (!gameState.isPlayerOne[0]) {
         gameState.isPlayerOne[0] = true; // Set player one as connected
-        response.json({ player: 'one' });
+        gameState.bWriteLock = false;
+        console.log("Game state write lock is now OFF.");
         console.log("Player One registered : " + gameState.isPlayerOne[0]);
+        return response.json({ player: 'one' });
+
     } else if (!gameState.isPlayerTwo[0]) {
         gameState.isPlayerTwo[0] = true; // Set player two as connected
-        response.json({ player: 'two' });
+        gameState.bWriteLock = false;
+        console.log("Game state write lock is now OFF.");
         console.log("Player Two registered : " + gameState.isPlayerTwo[0]);
+        return response.json({ player: 'two' });
+
     }
 
     console.log("Player One: " + gameState.isPlayerOne[0] + " - Player Two: " + gameState.isPlayerTwo[0]);
+    gameState.bWriteLock = false; 
+    console.log("Game state write lock is now OFF.");
+    console.log("both players already registered on client end.")
 })
 
 
 // Function to reset the game state to its initial values
 function resetGameSave() {
-    // const nullState = {
-    //     board: Array(16).fill(""),
-    //     currentPlayer: "",
-    //     playerOneGuess: null,
-    //     playerTwoGuess: null,
-    //     coinFlip: null,
-    //     isPlayerOne: [false, ""],
-    //     isPlayerTwo: [false, ""],
-    //     winCondition: null,
-    //     winner: null
-    // };
-    // fs.writeFileSync(gameSavePath, JSON.stringify(nullState, null, 2));
-    // console.log('data.json has been reset.');
 
     gameState = {
         board: Array(16).fill(""),
@@ -124,11 +121,13 @@ function resetGameSave() {
         playerOneFlip: null,
         playerTwoFlip: null,
         coinFlip: "Tails", // Default coin flip value
-        isPlayerOne: [false, ""],
-        isPlayerTwo: [false, ""],
+        isPlayerOne: [false, ""], // [connected, "X" or "O"]
+        isPlayerTwo: [false, ""], // [connected, "X" or "O"]
         winCondition: null,
         winner: null, 
-        coinTossOver: false 
+        coinTossOver: false,
+        forfeit: false, // Reset forfeit state
+        bWriteLock: false
     };
 
     console.log("Game state has been reset from null state.");
