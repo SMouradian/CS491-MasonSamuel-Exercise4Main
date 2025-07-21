@@ -475,7 +475,7 @@ async function compareCoinFlip(){
  */
 async function pollCoinFlipResult(){
     coinSync = setInterval(async () => {
-        const response = await fetch ("http://127.0.0.1:8080/State") // listen on the server not the browser port
+        const response = await fetch ("https://legendary-rotary-phone-9757rwr9vj2xqjj-8080.app.github.dev/State") // listen on the server not the browser port
         const jData = await response.json();
         currentGameState = jData; // copy the server token to the local token
 
@@ -609,7 +609,7 @@ async function restartGame(){
  * tests connection to the server by fetching the servers root URL
  */
 async function initGameState_Fetch(){
-    await fetch("http://127.0.0.1:8080")
+    await fetch("https://legendary-rotary-phone-9757rwr9vj2xqjj-8080.app.github.dev/")
     .then(response => response.text())
     .then(data => {
         console.log("Server message:", data); 
@@ -642,7 +642,7 @@ async function safeSaveGameState(state){
  * assign Player One and Player Two depending on the order of connection to the server
  */
 async function getPlayerIdFetch(){
-    const response = await fetch("http://127.0.0.1:8080/register", {
+    const response = await fetch("https://legendary-rotary-phone-9757rwr9vj2xqjj-8080.app.github.dev/register", {
         method: "POST"
     });
     const data = await response.json();
@@ -672,7 +672,7 @@ async function getPlayerIdFetch(){
  * @returns {void} Resolves once the POST is completed and the lock is cleared.
  */
 async function post_GameState(state){ 
-    fetch("http://127.0.0.1:8080/State", { // listen on the server not the browser port
+    fetch("https://legendary-rotary-phone-9757rwr9vj2xqjj-8080.app.github.dev/State", { // listen on the server not the browser port
         method : "POST", 
         headers:{
             'content-type': 'application/json',
@@ -696,7 +696,7 @@ async function post_GameState(state){
  */
 async function getFetch_GameState(){
     // console.log("fetching game state from server");
-    const response = await fetch ("http://127.0.0.1:8080/State") // listen on the server not the browser port
+    const response = await fetch ("https://legendary-rotary-phone-9757rwr9vj2xqjj-8080.app.github.dev/State") // listen on the server not the browser port
     const jData = await response.json();
     currentGameState = jData; // copy the server token to the local token
 }
