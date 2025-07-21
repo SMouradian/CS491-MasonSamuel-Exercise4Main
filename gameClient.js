@@ -695,10 +695,18 @@ async function post_GameState(state){
  * can be called periodically within an inteval to update local game state
  */
 async function getFetch_GameState(){
-    // console.log("fetching game state from server");
-    const response = await fetch ("https://legendary-rotary-phone-9757rwr9vj2xqjj-8080.app.github.dev/State") // listen on the server not the browser port
-    const jData = await response.json();
-    currentGameState = jData; // copy the server token to the local token
+    try{
+        const response = await fetch("https://legendary-rotary-phone-9757rwr9vj2xqjj-8080.app.github.dev/State");
+        if(!response.ok){
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const newState = await response.json();
+        currentGameState = newState; // ✅ This line was missing
+        return newState;
+    }catch(err){
+        console.error("Failed to fetch game state:", err);
+        throw err;
+    }
 }
 
 /**
