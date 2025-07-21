@@ -20,7 +20,7 @@ Note: `npm i express` and `npm install express` do the same thing — you only n
 - Open the terminal (`Ctrl + \``)
 - Start the server with:
   ```
-  node server.js
+  node SERVER/express.js
   ```
 - Set the port visibility to **public** (option is to the right of the terminal tab)
 - Codespaces will prompt you to open a new browser tab for the server
