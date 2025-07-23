@@ -186,6 +186,7 @@ async function updateUsersChoiceMoveToScreen(cellClicked, index){
     cells[index].textContent = currentGameState.currentPlayer; // update the cell with the current player's choice
     console.log("save from inside of the updateUsersChoiceMoveToScreen: ", currentGameState);
     await safeSaveGameState(currentGameState);
+    await safeSaveGameState(currentGameState);
 }
 
 /**
@@ -345,6 +346,7 @@ async function universalButtonToggle(){
     else if(universalButton.textContent === "Start"){
         currentGameState.forfeit = false; // reset forfeit state
         await safeSaveGameState(currentGameState); // save the game state to the server
+        await safeSaveGameState(currentGameState);
         initGameUI(); 
         toggleCellsListener();
         await pollSaveDuringGame(); 
@@ -383,7 +385,7 @@ async function pollSaveDuringGame(){
         }
         await getFetch_GameState();
         updateBoardFromGameState();
-    }, 50); // poll every 50ms
+    }, 500); // poll every 50ms
 }
 
 /**
@@ -397,6 +399,7 @@ async function initGameUI(){
         running = true;
         currentGameState.currentPlayer = "O"; // O goes first
         await safeSaveGameState(currentGameState);
+        await safeSaveGameState(currentGameState);
         changeBoardVisibility(); // show the game board
     }
 
@@ -405,6 +408,7 @@ async function initGameUI(){
         // initGameState_Fetch(); // fetch the game state from the server to init currentGameState
         currentGameState.winner = null; // reset the winner
         await safeSaveGameState(currentGameState); 
+        await safeSaveGameState(currentGameState);
     } 
 }
 
@@ -432,6 +436,7 @@ async function FlipCoin(){
     }
     else if (playerTwo === true){
         currentGameState.playerTwoFlip = localCoinFlipResult;
+        await safeSaveGameState(currentGameState);
         await safeSaveGameState(currentGameState);
     }
     compareCoinFlip(); // compare the coin flip results of both players
@@ -473,6 +478,7 @@ async function compareCoinFlip(){
     currentGameState.coinTossOver = true; // set coin toss over to true so that the game can continue
     setUniversalButtonContent("Clear");
     await safeSaveGameState(currentGameState); // save the game state to the server
+    await safeSaveGameState(currentGameState);
     await pollSaveDuringGame();
     toggleCellsListener();
     universalButton.addEventListener("click", universalButtonToggle); // should not be null
@@ -485,7 +491,7 @@ async function compareCoinFlip(){
  */
 async function pollCoinFlipResult(){
     coinSync = setInterval(async () => {
-        const response = await fetch ("http://127.0.0.1:8080/State") // listen on the server not the browser port
+        const response = await fetch ("http://musical-spoon-pvq96jv57473694j-8080.app.github.dev/State") // listen on the server not the browser port
         const jData = await response.json();
         currentGameState = jData; // copy the server token to the local token
 
@@ -535,6 +541,7 @@ async function checkForFourInARow(thisOptions){
             currentGameState.winner = currentGameState.currentPlayer; // set the winner in the current game state
             console.log("Save from checkForFourInARow: ", currentGameState);
             await safeSaveGameState(currentGameState); 
+            await safeSaveGameState(currentGameState);
             // await updateFileGameStateWithFilePicker(); // update the file game state with the file picker
 
             returnValue = 1;
@@ -569,12 +576,14 @@ async function checkWinner(){
             currentGameState.isPlayerOne[1] = "X";
         }
         await safeSaveGameState(currentGameState); // save the game state to the server
+        await safeSaveGameState(currentGameState);
     }
     else if(!currentGameState.board.includes("")){
         displayDrawMessage(); // call the displayDrawMessage function to display the draw message
         running = false;
         console.log("save from check winner, draw: ", currentGameState);
         await safeSaveGameState(currentGameState); // save the game state to the server
+        await safeSaveGameState(currentGameState);
     }
     else if((playerOne && currentGameState.isPlayerOne[1] === currentGameState.currentPlayer) || (playerTwo && currentGameState.isPlayerTwo[1] === currentGameState.currentPlayer)){
         await changePlayer();
@@ -589,6 +598,7 @@ async function changePlayer(){
 
     currentGameState.currentPlayer = currentGameState.currentPlayer === "O" ? "X" : "O";
     await safeSaveGameState(currentGameState); // save the game state to the server
+    await safeSaveGameState(currentGameState);
 }
 
 /**
@@ -612,6 +622,7 @@ async function restartGame(){
     currentGameState.board = Array(16).fill("");
     currentGameState.winCondition = null;
     await safeSaveGameState(currentGameState);
+    await safeSaveGameState(currentGameState);
     console.log("game state after restart: ", currentGameState);
 }
 
@@ -619,7 +630,7 @@ async function restartGame(){
  * tests connection to the server by fetching the servers root URL
  */
 async function initGameState_Fetch(){
-    await fetch("http://127.0.0.1:8080")
+    await fetch("http://musical-spoon-pvq96jv57473694j-8080.app.github.dev")
     .then(response => response.text())
     .then(data => {
         console.log("Server message:", data); 
@@ -652,7 +663,7 @@ async function safeSaveGameState(state){
  * assign Player One and Player Two depending on the order of connection to the server
  */
 async function getPlayerIdFetch(){
-    const response = await fetch("http://127.0.0.1:8080/register", {
+    const response = await fetch("http://musical-spoon-pvq96jv57473694j-8080.app.github.dev/register", {
         method: "POST"
     });
     const data = await response.json();
@@ -682,7 +693,7 @@ async function getPlayerIdFetch(){
  * @returns {void} Resolves once the POST is completed and the lock is cleared.
  */
 async function post_GameState(state){ 
-    fetch("http://127.0.0.1:8080/State", { // listen on the server not the browser port
+    fetch("http://musical-spoon-pvq96jv57473694j-8080.app.github.dev/State", { // listen on the server not the browser port
         method : "POST", 
         headers:{
             'content-type': 'application/json',
@@ -719,7 +730,7 @@ document.addEventListener("keydown", async (event) => {
  * Resets the game state on the server.
  */
 async function resetGameAndServer() {
-        fetch("http://127.0.0.1:8080/forceReload", { // listen on the server not the browser port
+        fetch("http://musical-spoon-pvq96jv57473694j-8080.app.github.dev/forceReload", { // listen on the server not the browser port
         method : "POST", 
         headers:{
             'content-type': 'application/json',
@@ -741,7 +752,7 @@ async function resetGameAndServer() {
  * Used for polling if the game has been reset on the other client end. if so restart window and resign into server
  */
 setInterval(async () => {
-    const response = await fetch("http://127.0.0.1:8080/reload");
+    const response = await fetch("http://musical-spoon-pvq96jv57473694j-8080.app.github.dev/reload");
     const reset = await response.json(); // Get the reset state from the server
     forceReload = reset.forceReload; // Update the local forceReload variable
     // Check if the server has requested a reload
@@ -760,9 +771,21 @@ setInterval(async () => {
  */
 async function getFetch_GameState(){
     // console.log("fetching game state from server");
-    const response = await fetch ("http://127.0.0.1:8080/State"); // listen on the server not the browser port
-    const jData = await response.json();
-    currentGameState = jData; // copy the server token to the local token
+    const response = await fetch ("http://musical-spoon-pvq96jv57473694j-8080.app.github.dev/State"); // listen on the server not the browser port
+    const currentState = await response.json();
+    currentGameState = currentState; // copy the server token to the local token
+    // try{
+    //     const response = await fetch("https://legendary-rotary-phone-9757rwr9vj2xqjj-8080.app.github.dev/State");
+    //     if(!response.ok){
+    //         throw new Error(`HTTP error! status: ${response.status}`);
+    //     }
+    //     const newState = await response.json();
+    //     currentGameState = newState; 
+    //     return newState;
+    // }catch(err){
+    //     console.error("Failed to fetch game state:", err);
+    //     throw err;
+    // }
 }
 
 /**
