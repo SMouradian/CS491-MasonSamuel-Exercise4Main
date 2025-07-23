@@ -29,19 +29,23 @@ const PORT = process.env.PORT || 8080;
  * @property {boolean} bWriteLock - Lock flag to prevent overlapping state writes.
  */
 let gameState = {
-        board: Array(16).fill(""),
-        currentPlayer: "",
-        playerOneFlip: null,
-        playerTwoFlip: null,
-        coinFlip: "Tails", // Default coin flip value
-        isPlayerOne: [false, ""], // [connected, "X" or "O"]
-        isPlayerTwo: [false, ""], // [connected, "X" or "O"]
-        winCondition: null,
-        winner: null, 
-        coinTossOver: false,
-        forfeit: false, // Reset forfeit state
-        bWriteLock: false
-    };
+    board: Array(16).fill(""),
+    currentPlayer: "",
+    playerOneFlip: null,
+    playerTwoFlip: null,
+    coinFlip: "Tails", // Default coin flip value
+    isPlayerOne: [false, ""], // [connected, "X" or "O"]
+    isPlayerTwo: [false, ""], // [connected, "X" or "O"]
+    winCondition: null,
+    winner: null, 
+    coinTossOver: false,
+    forfeit: false, // Reset forfeit state
+    bWriteLock: false
+};
+
+let forceReload = false;
+
+
 
 // const gameSavePath = path.join(__dirname, '../data/db.json');
 app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from the 'public' directory
@@ -67,8 +71,30 @@ app.get("/", (request, response) => {
     }
 });
 
- // Request to server from client for some data 
- // app.get("URL",(req,res)=>{})
+/**
+ * Endpoint to force reload the server state.
+ */
+app.get("/reload", (request, response) => {
+    // console.log("Force restarting server state");
+    response.json({ forceReload });
+    forceReload = false; // Set forceReload to false to notify clients
+});
+
+/**
+ * Endpoint to reset the game state and notify clients to reload.
+ */
+app.post("/forceReload", (request, response) => {
+    resetGameSave();
+    forceReload = true; //tell the other client to reset
+    response.send("Game state has been reset and clients notified to reload.");
+});
+
+/**
+ * Endpoint to get the current game state.
+ *  Request to server from client for some data 
+ *  app.get("URL",(req,res)=>{})
+ */
+
 app.get("/State", (request, response) => {
 
     response.json(gameState); // Send the game state as a JSON response
@@ -96,6 +122,10 @@ app.post("/State", (request, response) => {
     console.log(request.body);
 })
 
+
+/**
+ * server endpoint to register players
+ */
 app.post("/register", (request, response) => {
     if (!gameState.bWriteLock) {
         gameState.bWriteLock = true; // Lock the game state to prevent concurrent writes
@@ -150,15 +180,6 @@ function resetGameSave() {
     };
 
     console.log("Game state has been reset from null state.");
-}
-
-/**
- * Function to reset the game state to its initial values
- */
-function ReNewGameSave() {
-    // Reset the game state to its initial values
-    gameState.board = Array(16).fill(""); // Reset the board to empty
-    console.log("Game BOARD has been emptied.");
 }
 
 /**
