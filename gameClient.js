@@ -719,7 +719,7 @@ document.addEventListener("keydown", async (event) => {
  * Resets the game state on the server.
  */
 async function resetGameAndServer() {
-        fetch("http://127.0.0.1:8080/forceReload", { // listen on the server not the browser port
+        fetch("https://legendary-rotary-phone-9757rwr9vj2xqjj-8080.app.github.dev/forceReload", { // listen on the server not the browser port
         method : "POST", 
         headers:{
             'content-type': 'application/json',
@@ -741,7 +741,7 @@ async function resetGameAndServer() {
  * Used for polling if the game has been reset on the other client end. if so restart window and resign into server
  */
 setInterval(async () => {
-    const response = await fetch("http://127.0.0.1:8080/reload");
+    const response = await fetch("https://legendary-rotary-phone-9757rwr9vj2xqjj-8080.app.github.dev/reload");
     const reset = await response.json(); // Get the reset state from the server
     forceReload = reset.forceReload; // Update the local forceReload variable
     // Check if the server has requested a reload
