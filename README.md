@@ -17,10 +17,11 @@ Note: `npm i express` and `npm install express` do the same thing — you only n
 
 ## Running the Code in Codespaces
 
+- PRESS 'r' TO RESET SERVER
 - Open the terminal (`Ctrl + \``)
 - Start the server with:
   ```
-  node SERVER/express.js
+  node SERVER/server.js
   ```
 - Set the port visibility to **public** (option is to the right of the terminal tab)
 - Codespaces will prompt you to open a new browser tab for the server
