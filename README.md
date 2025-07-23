@@ -17,6 +17,7 @@ Note: `npm i express` and `npm install express` do the same thing — you only n
 
 ## Running the Code in Codespaces
 
+- PRESS 'r' TO RESET SERVER
 - Open the terminal (`Ctrl + \``)
 - Start the server with:
   ```
