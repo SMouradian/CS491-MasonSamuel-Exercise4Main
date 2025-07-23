@@ -1,7 +1,5 @@
 /** Mason Haines - Samuel Mouradian 7/17/2025 */
 
-const { json } = require("body-parser");
-
 /**
  * anonymous immediately invoked function that will execute immediately after being called
  * https://www.youtube.com/watch?v=SMUHorBkVsY
@@ -702,56 +700,56 @@ async function post_GameState(state){
 }
 
 
-// /**
-//  * event listener to wait for "r" key down event to then reload state for clients and server
-//  */
-// document.addEventListener("keydown", async (event) => {
-//     if (event.key.toLowerCase() ==="r") {
-//         forceReload = true;
-//         clearInterval(syncSave); // clear interval for polling state
-//         clearInterval(coinSync); // clear interval for coin toss results
-//         resetGameAndServer(); // call function to post to server force reload request
-//         await sleep(1000);
-//         window.location.reload(); // reload window 
-//     }
-// });
+/**
+ * event listener to wait for "r" key down event to then reload state for clients and server
+ */
+document.addEventListener("keydown", async (event) => {
+    if (event.key.toLowerCase() ==="r") {
+        forceReload = true;
+        clearInterval(syncSave); // clear interval for polling state
+        clearInterval(coinSync); // clear interval for coin toss results
+        resetGameAndServer(); // call function to post to server force reload request
+        await sleep(1000);
+        window.location.reload(); // reload window 
+    }
+});
 
 
-// /**
-//  * 
-//  */
-// async function resetGameAndServer() {
-//         fetch("http://127.0.0.1:8080/forceReload", { // listen on the server not the browser port
-//         method : "POST", 
-//         headers:{
-//             'content-type': 'application/json',
-//             'Accept': 'application/json'
-//         },
-//         body: JSON.stringify({ forceReload: true }, null, 2) // extra params to format the JSON data
-//     })
-//     .then(response => response.text())
-//     .then(data => {
-//         console.log("Server message:", data); 
-//     })
-//     .catch(error => {
-//         console.error("Fetch failed:", error);  
-//     });
-// }
+/**
+ * Resets the game state on the server.
+ */
+async function resetGameAndServer() {
+        fetch("http://127.0.0.1:8080/forceReload", { // listen on the server not the browser port
+        method : "POST", 
+        headers:{
+            'content-type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ forceReload: true }, null, 2) // extra params to format the JSON data
+    })
+    .then(response => response.text())
+    .then(data => {
+        console.log("Server message:", data); 
+    })
+    .catch(error => {
+        console.error("Fetch failed:", error);  
+    });
+}
 
 
-// /**
-//  * Used for polling if the game has been reset on the other client end. if so restart window and resign into server
-//  */
-// setInterval(async () => {
-//     const response = await fetch("http://127.0.0.1:8080/reload");
-//     const reset = await response.json(); // Get the reset state from the server
+/**
+ * Used for polling if the game has been reset on the other client end. if so restart window and resign into server
+ */
+setInterval(async () => {
+    const response = await fetch("http://127.0.0.1:8080/reload");
+    const reset = await response.json(); // Get the reset state from the server
+    forceReload = reset.forceReload; // Update the local forceReload variable
+    // Check if the server has requested a reload
+    if (forceReload) {
+        window.location.reload();
+    }
 
-//     // Check if the server has requested a reload
-//     if (reset.forceReload) {
-//         window.location.reload();
-//     }
-
-// }, 50); // poll every 50ms
+}, 50); // poll every 50ms
 
 
 

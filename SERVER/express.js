@@ -71,22 +71,23 @@ app.get("/", (request, response) => {
     }
 });
 
-// /**
-//  * Endpoint to force reload the server state.
-//  */
-// app.get("/reload", (request, response) => {
-//     console.log("Force restarting server state");
-//     response.json({ forceReload });
-// });
+/**
+ * Endpoint to force reload the server state.
+ */
+app.get("/reload", (request, response) => {
+    // console.log("Force restarting server state");
+    response.json({ forceReload });
+    forceReload = false; // Set forceReload to false to notify clients
+});
 
-// /**
-//  * Endpoint to reset the game state and notify clients to reload.
-//  */
-// app.post("/forceReload", (request, response) => {
-//     resetGameSave();
-//     forceReload = true; // tell the other client to reset
-//     response.send("Game state has been reset and clients notified to reload.");
-// });
+/**
+ * Endpoint to reset the game state and notify clients to reload.
+ */
+app.post("/forceReload", (request, response) => {
+    resetGameSave();
+    forceReload = true; //tell the other client to reset
+    response.send("Game state has been reset and clients notified to reload.");
+});
 
 /**
  * Endpoint to get the current game state.
