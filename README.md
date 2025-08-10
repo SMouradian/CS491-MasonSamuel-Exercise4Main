@@ -6,6 +6,7 @@ When hosting the server inside a Codespace, you must update all `fetch()` calls 
 Example:
 ```javascript
 fetch("http://musical-spoon-pvq96jv57473694j-8080.app.github.dev/State");
+```
 
 This URL points to a previously used Codespace. You must replace everything between "http://" and "/State" with your own Codespace address after starting the Express server inside your Codespace.
 
