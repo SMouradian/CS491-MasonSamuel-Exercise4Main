@@ -491,7 +491,7 @@ async function compareCoinFlip(){
  */
 async function pollCoinFlipResult(){
     coinSync = setInterval(async () => {
-        const response = await fetch ("http://musical-spoon-pvq96jv57473694j-8080.app.github.dev/State") // listen on the server not the browser port
+        const response = await fetch ("https://musical-spoon-pvq96jv57473694j-8080.app.github.dev/State") // listen on the server not the browser port
         const jData = await response.json();
         currentGameState = jData; // copy the server token to the local token
 
@@ -663,7 +663,7 @@ async function safeSaveGameState(state){
  * assign Player One and Player Two depending on the order of connection to the server
  */
 async function getPlayerIdFetch(){
-    const response = await fetch("http://musical-spoon-pvq96jv57473694j-8080.app.github.dev/register", {
+    const response = await fetch("https://musical-spoon-pvq96jv57473694j-8080.app.github.dev/register", {
         method: "POST"
     });
     const data = await response.json();
@@ -693,7 +693,7 @@ async function getPlayerIdFetch(){
  * @returns {void} Resolves once the POST is completed and the lock is cleared.
  */
 async function post_GameState(state){ 
-    fetch("http://musical-spoon-pvq96jv57473694j-8080.app.github.dev/State", { // listen on the server not the browser port
+    fetch("https://musical-spoon-pvq96jv57473694j-8080.app.github.dev/State", { // listen on the server not the browser port
         method : "POST", 
         headers:{
             'content-type': 'application/json',
@@ -730,7 +730,7 @@ document.addEventListener("keydown", async (event) => {
  * Resets the game state on the server.
  */
 async function resetGameAndServer() {
-        fetch("http://musical-spoon-pvq96jv57473694j-8080.app.github.dev/forceReload", { // listen on the server not the browser port
+        fetch("https://musical-spoon-pvq96jv57473694j-8080.app.github.dev/forceReload", { // listen on the server not the browser port
         method : "POST", 
         headers:{
             'content-type': 'application/json',
@@ -752,7 +752,7 @@ async function resetGameAndServer() {
  * Used for polling if the game has been reset on the other client end. if so restart window and resign into server
  */
 setInterval(async () => {
-    const response = await fetch("http://musical-spoon-pvq96jv57473694j-8080.app.github.dev/reload");
+    const response = await fetch("https://musical-spoon-pvq96jv57473694j-8080.app.github.dev/reload");
     const reset = await response.json(); // Get the reset state from the server
     forceReload = reset.forceReload; // Update the local forceReload variable
     // Check if the server has requested a reload
@@ -771,7 +771,7 @@ setInterval(async () => {
  */
 async function getFetch_GameState(){
     // console.log("fetching game state from server");
-    const response = await fetch ("http://musical-spoon-pvq96jv57473694j-8080.app.github.dev/State"); // listen on the server not the browser port
+    const response = await fetch ("https://musical-spoon-pvq96jv57473694j-8080.app.github.dev/State"); // listen on the server not the browser port
     const currentState = await response.json();
     currentGameState = currentState; // copy the server token to the local token
     // try{
